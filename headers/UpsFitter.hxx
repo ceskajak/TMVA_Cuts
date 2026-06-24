@@ -298,7 +298,7 @@ FitResultMetrics fit_bin(RooDataSet * ds_US, RooDataSet * ds_LS, TString outname
 
 		// Save results in a text file
 		std::ofstream out;
-		out.open("/home/jakub/Documents/SDCC/scripts/TMVA/output/results/" + outname + ".txt");
+		out.open("output/results/" + outname + ".txt");
 		out << "US entries: " << US_entries << ", LS entries: " << LS_entries << endl;
 		out << "#chi^{2}/N^{US}_{dof} = " << chi2ndf_US << ", #chi^{2}/N^{LS}_{dof} = " << chi2ndf_LS << endl;
 		out << "frac: " << yield1.getVal() << ", yield: " << (yield1.getVal()*US_entries) << endl;
@@ -346,7 +346,7 @@ FitResultMetrics fit_bin(RooDataSet * ds_US, RooDataSet * ds_LS, TString outname
 		*/
 
 		// TODO rewrite as with pT bins!!!
-		cnv->cd()->SaveAs("/home/jakub/Documents/SDCC/scripts/TMVA/output/fig/" + outname + ".png");
+		cnv->cd()->SaveAs("output/fig/" + outname + ".png");
 		//cnv->cd()->SaveAs("output/rootfiles/" + outname + ".root");
 		
 		gStyle->SetPaintTextFormat("4.2f");

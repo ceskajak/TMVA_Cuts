@@ -13,16 +13,16 @@ const double m_sig_lo = 8.8;
 const double m_sig_hi = 11.1;
 
 // S/B discrimination (on/off, only one can be active at once!)
-bool useMassCuts = 1;
-bool useChargeCuts = 0;
+bool useMassCuts = 0;
+bool useChargeCuts = 1;
 
 // TMVA Methods (on/off, at least one)
 bool kCuts = 1;
-bool kBDTG = 0;
-bool kHMatrix = 0;
-bool kFisher = 0;
-bool kMLP = 0;
-bool kSVM = 0;
+bool kBDTG = 1;
+bool kHMatrix = 1;
+bool kFisher = 1;
+bool kMLP = 1;
+bool kSVM = 1;
 
 vector<TString> TMVAInputVariables =
 {
