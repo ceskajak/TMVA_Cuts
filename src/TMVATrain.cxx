@@ -309,14 +309,6 @@ void TMVATrain()
         }
     }
 
-    // Output the best candidate and its metrics, and save the optimized cuts to a text file for reference
-    TString bestCuts = BuildCutExpression(bestCandidate);
-    cout << "\nBest optimized cut set:" << endl;
-    cout << bestCuts << endl;
-    cout << "Yield=" << bestMetrics.yield << ", S/sqrt(S+B)=" << bestMetrics.S_over_sqrtSB << endl;
-    cout << "TMVA signal efficiency target=" << bestCandidate.effS << endl;
-
-    }
     cout << "Cleaning up TMVA resources..." << endl;
 
     // Close and delete the output file first to ensure any TMVA-written
