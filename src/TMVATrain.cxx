@@ -316,20 +316,6 @@ void TMVATrain()
     cout << "Yield=" << bestMetrics.yield << ", S/sqrt(S+B)=" << bestMetrics.S_over_sqrtSB << endl;
     cout << "TMVA signal efficiency target=" << bestCandidate.effS << endl;
 
-    // Save the best cuts and their metrics to a text file for reference
-    cout << "Writing optimized_cuts.txt..." << endl;
-    ofstream outfile("output/tmva/optimized_cuts.txt");
-    if (!outfile.is_open())
-    {
-        cerr << "ERROR: Cannot open output/tmva/optimized_cuts.txt for writing" << endl;
-    }
-    else
-    {
-        outfile << "Best TMVA cut set (signal efficiency target=" << bestCandidate.effS << ")\n";
-        outfile << bestCuts << "\n";
-        outfile << "Yield=" << bestMetrics.yield << ", S/sqrt(S+B)=" << bestMetrics.S_over_sqrtSB << "\n";
-        outfile.close();
-        cout << "optimized_cuts.txt written successfully." << endl;
     }
     cout << "Cleaning up TMVA resources..." << endl;
 
