@@ -45,7 +45,7 @@ GLOBAL VARIABLES
 TFile * f_data;
 
 // Dataset after applying cuts
-RooDataSet * d_main;
+RooDataSet * rds_data;
 
 // Global maps to store parameters for different bins/triggers
 map<TString, vector<vector<Double_t>>> map_par;
@@ -379,101 +379,72 @@ FitResultMetrics fit_bin(RooDataSet * ds_US, RooDataSet * ds_LS, TString outname
 }
 /////////////////////////////////////////////////////////////
 
-inline static RooDataSet * PreprocessData()
+inline static RooDataSet * GetRooDataSet()
 {
-    TFile * f_data = nullptr;
-    RooDataSet * d_main = nullptr;
+    TFile * f_tmp = TFile::Open("data/cands+base.root", "READ");
+	TTree * t_tmp = nullptr;
+    RooDataSet * rds_tmp = nullptr;
 
-    if (! TFile::Open("data/d_main_preprocessed.root"))
-	{
-        // Very broad cuts to reduce the dataset size for faster loading/fitting; these will be refined later
-		TString cutExpr = CutGenerator::CombineCuts(
-			CutGenerator::GetRapidityCut(-2, 2),
-			CutGenerator::GetNSigmaECut(-3.0),
-			CutGenerator::GetBEMCValidCut(),
-			CutGenerator::GetETowEcluCut(0),
-			CutGenerator::GetEOverPCut(0.55, Eoverp_hi),
-			CutGenerator::GetPtCut(d1_pT_lo), // Assuming same pT cut for both electrons
-			CutGenerator::GetADCCut(adc_trig_BHT2), // Using adc_trig for ONE electron (partner cut is off)
-			CutGenerator::GetNHitsFitCut(15),
-			CutGenerator::GetNHitsRatioCut(0.5),
-			CutGenerator::GetDCACut(3.0),
-			CutGenerator::GetVzDiffCut(9999),
-			CutGenerator::GetDZCut(20),
-			CutGenerator::GetDphiCut(0.1)
-        );
-
-        cout << "Applying cuts: " << cutExpr << endl;
-        return NULL; // Placeholder for actual dataset preprocessing logic
-
-
-		// THIS PART PRE-PROCESSES THE DATASET, SO IT'S FASTER TO LOAD
-		f_data = new TFile ("data/main.root", "READ");
-		// Load datasets for the specified bin
-		TTree * tree = (TTree *)f_data->Get("tree");
-
-		// Create output file for preprocessed dataset
-		// Prevent memory-resident TTree by writing to disk immediately
-		TString dmainFile = "data/d_main_preprocessed.root";
-		TFile dmainOut(dmainFile, "RECREATE");
-
-        // Define RooRealVars for all relevant variables, including those needed for cuts and fitting
-        RooRealVar m("m", "m", min_mass, max_mass, "GeV/c^{2}");
-        RooRealVar charge("charge", "charge", -3, 3, "e");
-        RooRealVar y("y", "rapidity", -2, 2);
-        RooRealVar nSigmaElectron1("nSigmaElectron1", "nSigmaElectron1", -5, 5);
-        RooRealVar nSigmaElectron2("nSigmaElectron2", "nSigmaElectron2", -5, 5);
-        RooRealVar dEdx1("dEdx1", "dEdx1", 0, 1000);
-        RooRealVar dEdx2("dEdx2", "dEdx2", 0, 1000);
-        RooRealVar eta1("eta1", "eta1", -2, 2);
-        RooRealVar eta2("eta2", "eta2", -2, 2);
-        RooRealVar phi1("phi1", "phi1", -3.14, 3.14);
-        RooRealVar phi2("phi2", "phi2", -3.14, 3.14);
-        RooRealVar invBeta1("invBeta1", "invBeta1", -1, 3);
-        RooRealVar invBeta2("invBeta2", "invBeta2", -1, 3);
-        RooRealVar E_TOW1("E_TOW1", "E_TOW1", 0, 100, "GeV");
-        RooRealVar E_CLU1("E_CLU1", "E_CLU1", 0, 100, "GeV");
-        RooRealVar E_TOW2("E_TOW2", "E_TOW2", 0, 100, "GeV");
-        RooRealVar E_CLU2("E_CLU2", "E_CLU2", 0, 100, "GeV");
-        RooRealVar p1("p1", "p1", 0, 100, "GeV/c");
-        RooRealVar p2("p2", "p2", 0, 100, "GeV/c");
-        RooRealVar pt1("pt1", "pt1", 0, 100, "GeV/c");
-        RooRealVar pt2("pt2", "pt2", 0, 100, "GeV/c");
-        RooRealVar adc1("adc1", "adc1", 0, 1024);
-        RooRealVar adc2("adc2", "adc2", 0, 1024);
-        RooRealVar bemcZDist1("bemcZDist1", "bemcZDist1", -50, 50, "cm");
-        RooRealVar bemcZDist2("bemcZDist2", "bemcZDist2", -50, 50, "cm");
-        RooRealVar bemcPhiDist1("bemcPhiDist1", "bemcPhiDist1", -1, 1, "rad");
-        RooRealVar bemcPhiDist2("bemcPhiDist2", "bemcPhiDist2", -1, 1, "rad");
-        RooRealVar VzTPC("VzTPC", "VzTPC", -1000, 1000, "cm");
-        RooRealVar VzVPD("VzVPD", "VzVPD", -1000, 1000, "cm");
-        RooRealVar nHitsFit1("nHitsFit1", "nHitsFit1", 0, 100);
-        RooRealVar nHitsMax1("nHitsMax1", "nHitsMax1", 0, 100);
-        RooRealVar nHitsFit2("nHitsFit2", "nHitsFit2", 0, 100);
-        RooRealVar nHitsMax2("nHitsMax2", "nHitsMax2", 0, 100);
-        RooRealVar DCA1("DCA1", "DCA1", -10, 10, "cm");
-        RooRealVar DCA2("DCA2", "DCA2", -10, 10, "cm");
-
-		d_main = new RooDataSet("d_main", "Dataset with cuts",
-			RooArgSet(charge, m, y, nSigmaElectron1, nSigmaElectron2,
-			dEdx1, dEdx2, eta1, eta2, phi1, phi2, invBeta1, invBeta2,
-			E_TOW1, E_CLU1, E_TOW2, E_CLU2, p1, p2, pt1, pt2, adc1, adc2,
-			bemcZDist1, bemcZDist2, bemcPhiDist1, bemcPhiDist2, VzTPC, VzVPD,
-			nHitsFit1, nHitsMax1, nHitsFit2, nHitsMax2, DCA1, DCA2),
-			Import(*tree), Cut(cutExpr));
-		d_main = (RooDataSet *)d_main->reduce(RooArgSet(m, charge, bemcZDist1, bemcZDist2, bemcPhiDist1, bemcPhiDist2));
-
-		d_main->Write();
-		dmainOut.Close();
-
-        
-	}
+    if (!f_tmp || f_tmp->IsZombie())
+        t_tmp = GetBaseTree();
 	else
+		t_tmp = (TTree *)f_tmp->Get("tree");
+
+	if (!t_tmp)
 	{
-		f_data = TFile::Open("data/d_main_preprocessed.root", "READ");
-		d_main = (RooDataSet *)f_data->Get("d_main");
+		cerr << "ERROR: Could not find tree in file!" << endl;
+		return nullptr;
 	}
 
-    f_data->Close();
-    return d_main;
+	/*
+    // Define RooRealVars for all relevant variables, including those needed for cuts and fitting
+    RooRealVar m("m", "m", min_mass, max_mass, "GeV/c^{2}");
+    RooRealVar charge("charge", "charge", -3, 3, "e");
+    RooRealVar y("y", "rapidity", -2, 2);
+    RooRealVar nSigmaElectron1("nSigmaElectron1", "nSigmaElectron1", -5, 5);
+    RooRealVar nSigmaElectron2("nSigmaElectron2", "nSigmaElectron2", -5, 5);
+    RooRealVar dEdx1("dEdx1", "dEdx1", 0, 1000);
+    RooRealVar dEdx2("dEdx2", "dEdx2", 0, 1000);
+    RooRealVar eta1("eta1", "eta1", -2, 2);
+    RooRealVar eta2("eta2", "eta2", -2, 2);
+    RooRealVar phi1("phi1", "phi1", -3.14, 3.14);
+    RooRealVar phi2("phi2", "phi2", -3.14, 3.14);
+    RooRealVar invBeta1("invBeta1", "invBeta1", -1, 3);
+    RooRealVar invBeta2("invBeta2", "invBeta2", -1, 3);
+    RooRealVar E_TOW1("E_TOW1", "E_TOW1", 0, 100, "GeV");
+    RooRealVar E_CLU1("E_CLU1", "E_CLU1", 0, 100, "GeV");
+    RooRealVar E_TOW2("E_TOW2", "E_TOW2", 0, 100, "GeV");
+    RooRealVar E_CLU2("E_CLU2", "E_CLU2", 0, 100, "GeV");
+    RooRealVar p1("p1", "p1", 0, 100, "GeV/c");
+    RooRealVar p2("p2", "p2", 0, 100, "GeV/c");
+    RooRealVar pt1("pt1", "pt1", 0, 100, "GeV/c");
+    RooRealVar pt2("pt2", "pt2", 0, 100, "GeV/c");
+    RooRealVar adc1("adc1", "adc1", 0, 1024);
+    RooRealVar adc2("adc2", "adc2", 0, 1024);
+    RooRealVar bemcZDist1("bemcZDist1", "bemcZDist1", -50, 50, "cm");
+    RooRealVar bemcZDist2("bemcZDist2", "bemcZDist2", -50, 50, "cm");
+    RooRealVar bemcPhiDist1("bemcPhiDist1", "bemcPhiDist1", -1, 1, "rad");
+    RooRealVar bemcPhiDist2("bemcPhiDist2", "bemcPhiDist2", -1, 1, "rad");
+    RooRealVar VzTPC("VzTPC", "VzTPC", -1000, 1000, "cm");
+    RooRealVar VzVPD("VzVPD", "VzVPD", -1000, 1000, "cm");
+    RooRealVar nHitsFit1("nHitsFit1", "nHitsFit1", 0, 100);
+    RooRealVar nHitsMax1("nHitsMax1", "nHitsMax1", 0, 100);
+    RooRealVar nHitsFit2("nHitsFit2", "nHitsFit2", 0, 100);
+    RooRealVar nHitsMax2("nHitsMax2", "nHitsMax2", 0, 100);
+    RooRealVar DCA1("DCA1", "DCA1", -10, 10, "cm");
+    RooRealVar DCA2("DCA2", "DCA2", -10, 10, "cm");
+	*/
+
+	rds_tmp = new RooDataSet("rds_cands+base", "Dataset with cuts",
+		RooArgSet(charge, m, y, nSigmaElectron1, nSigmaElectron2,
+		dEdx1, dEdx2, eta1, eta2, phi1, phi2, invBeta1, invBeta2,
+		E_TOW1, E_CLU1, E_TOW2, E_CLU2, p1, p2, pt1, pt2, adc1, adc2,
+		bemcZDist1, bemcZDist2, bemcPhiDist1, bemcPhiDist2, VzTPC, VzVPD,
+		nHitsFit1, nHitsMax1, nHitsFit2, nHitsMax2, DCA1, DCA2),
+		Import(*t_tmp));
+	rds_tmp = (RooDataSet *)rds_tmp->reduce(RooArgSet(m, charge, bemcZDist1, bemcZDist2, bemcPhiDist1, bemcPhiDist2));
+
+
+    f_tmp->Close();
+    return rds_tmp;
 }

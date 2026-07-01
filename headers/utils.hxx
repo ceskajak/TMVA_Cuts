@@ -1,6 +1,7 @@
 #pragma once
 
-#include "common.hxx"
+#include "variables.hxx"
+#include "CutGenerator.hxx"
 
 /*
 /////////////////////////////////////////////////////////////
@@ -44,6 +45,35 @@ static TString init_date_string()
     return TString(output);
 }
 
+/////////////////////////////////////////////////////////////
+
+inline TTree * GetBaseTree()
+{
+    if (!TFile::Open("data/cands+base.root"))
+    {
+        cout << "Preprocessed dataset not found. Creating..." << endl;
+
+        TFile * fTMPin = TFile::Open("data/main.root");
+        TTree * tTMP = (TTree *)fTMPin->Get("tree");
+
+        TFile * fTMPout = new TFile("data/cands+base.root", "RECREATE");
+        tTMP->CopyTree(CutGenerator::GetBaseCuts());
+
+        fTMPout->Write();
+        fTMPout->Close();
+        return tTMP;
+    }
+    else
+    {
+        cout << "Preprocessed dataset found. Loading..." << endl;
+        TFile * fTMPin = TFile::Open("data/cands+base.root");
+        TTree * tTMP = (TTree *)fTMPin->Get("tree");
+        return tTMP;
+    }
+}
+
+/////////////////////////////////////////////////////////////
+
 // Function to build a cut expression from a CutCandidate
 inline TString BuildCutExpression(const CutCandidate &cand)
 {
@@ -72,6 +102,8 @@ inline TString BuildCutExpression(const CutCandidate &cand)
     return expr;
 }
 
+/////////////////////////////////////////////////////////////
+
 static bool CheckFileExists(const TString &filename)
 {
     TFile *file = TFile::Open(filename, "READ");
@@ -84,3 +116,5 @@ static bool CheckFileExists(const TString &filename)
     file->Close();
     return true; // File exists and is readable
 }
+
+/////////////////////////////////////////////////////////////
