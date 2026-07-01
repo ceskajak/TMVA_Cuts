@@ -71,3 +71,16 @@ inline TString BuildCutExpression(const CutCandidate &cand)
     }
     return expr;
 }
+
+static bool CheckFileExists(const TString &filename)
+{
+    TFile *file = TFile::Open(filename, "READ");
+    if (!file || file->IsZombie())
+    {
+        if (file)
+            file->Close();
+        return false; // File does not exist or is not readable
+    }
+    file->Close();
+    return true; // File exists and is readable
+}

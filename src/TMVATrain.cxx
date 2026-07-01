@@ -47,23 +47,7 @@ void TMVATrain()
     cout << "Applying base cuts and creating datasets for fitting..." << endl;
     cout << endl;
 
-    TString baseSelection = CutGenerator::GetBEMCValidCut();
-    baseSelection = CutGenerator::CombineCuts(baseSelection, CutGenerator::GetVzDiffCut(9999.0));
-
-    // Additional cuts to reduce the dataset for TMVA optimization; these are the "minimum cuts" that define the starting point for optimization
-    TString minCuts = CutGenerator::CombineCuts(
-        CutGenerator::GetRapidityCut(-1, 1),
-        CutGenerator::GetNSigmaECut(nSigmaE_lo),
-        CutGenerator::GetBEMCValidCut(),
-        CutGenerator::GetETowEcluCut(EtowEclu),
-        CutGenerator::GetEOverPCut(0.55, Eoverp_hi),
-        CutGenerator::GetPtCut(d1_pT_lo),       // Assuming same pT cut for both electrons
-        CutGenerator::GetADCCut(adc_trig_BHT2), // Using adc_trig for ONE electron (partner cut is off)
-        CutGenerator::GetNHitsFitCut(nHitsFit),
-        CutGenerator::GetNHitsRatioCut(nHitsRatio),
-        CutGenerator::GetDCACut(3.0),
-        CutGenerator::GetDZCut(20),
-        CutGenerator::GetDphiCut(0.1));
+    TString baseSelection = CutGenerator::GetBaseCuts();
 
     // Combine base cuts with additional cuts to form the full selection for TMVA optimization
     baseSelection = CutGenerator::CombineCuts(baseSelection, minCuts);
@@ -155,7 +139,7 @@ void TMVATrain()
 
     // Book methods with options
     cout << "Booking TMVA methods..." << endl;
-    if (!kCuts && !kBDTG && !kHMatrix && !kFisher && !kMLP && !kSVM)
+    if (!kTrainCuts && !kTrainBDTG && !kTrainHMatrix && !kTrainFisher && !kTrainMLP && !kTrainSVM)
     {
         cerr << "ERROR: No TMVA methods booked!" << endl;
         cerr << "Quitting..." << endl;
@@ -168,7 +152,7 @@ void TMVATrain()
         return;
     }
     // Cuts method options: use Genetic Algorithm for optimization, enable efficiency selection, and use "FSmart" variable selection for cuts
-    if (kCuts)
+    if (kTrainCuts)
         factory->BookMethod(dataloader,
             TMVA::Types::kCuts,
             "Cuts",
@@ -176,7 +160,7 @@ void TMVATrain()
         );
 
     // BDTG method options: 800 trees, max depth of 3, gradient boosting with shrinkage, bagging with 50% sample fraction
-    if (kBDTG)
+    if (kTrainBDTG)
         factory->BookMethod(dataloader,
             TMVA::Types::kBDT,
             "BDTG",
@@ -190,7 +174,7 @@ void TMVATrain()
         );
 
     // HMatrix method options: no additional options for now
-    if (kHMatrix)
+    if (kTrainHMatrix)
         factory->BookMethod(dataloader,
             TMVA::Types::kHMatrix,
             "HMatrix",
@@ -198,7 +182,7 @@ void TMVATrain()
         );
 
     // Fisher method options: create PDFs for the MVA output using spline interpolation, with 60 bins and smoothing over 10 bins
-    if (kFisher)
+    if (kTrainFisher)
         factory->BookMethod(dataloader,
             TMVA::Types::kFisher,
             "Fisher",
@@ -206,7 +190,7 @@ void TMVATrain()
         );
 
     // MLP method options: use a multilayer perceptron with tanh activation, no variable transformation, 600 training cycles, and a hidden layer with N+5 neurons (where N is the number of input variables)
-    if (kMLP)
+    if (kTrainMLP)
         factory->BookMethod(dataloader,
             TMVA::Types::kMLP,
             "MLP",
@@ -215,7 +199,7 @@ void TMVATrain()
         );
 
     // SVM method options: use a support vector machine with a radial basis function kernel, gamma parameter of 0.25, and a tolerance of 0.001 for convergence
-    if (kSVM)
+    if (kTrainSVM)
         factory->BookMethod(dataloader,
             TMVA::Types::kSVM,
             "SVM",

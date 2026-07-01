@@ -95,7 +95,7 @@ public:
                                const TString &cut4 = "", const TString &cut5 = "", const TString &cut6 = "",
                                const TString &cut7 = "", const TString &cut8 = "", const TString &cut9 = "",
                                const TString &cut10 = "", const TString &cut11 = "", const TString &cut12 = "",
-                               const TString &cut13 = "")
+                               const TString &cut13 = "", const TString &cut14 = "", const TString &cut15 = "")
     {
         TString combined = cut1;
         if (cut2.Length() > 0)
@@ -122,6 +122,8 @@ public:
             combined = AppendCuts(combined, cut12);
         if (cut13.Length() > 0)
             combined = AppendCuts(combined, cut13);
+        if (cut14.Length() > 0)
+            combined = AppendCuts(combined, cut14);
         return combined;
     }
 
@@ -142,5 +144,25 @@ public:
             GetNHitsRatioCut(),
             GetDCACut(),
             GetVzDiffCut());
+    }
+
+    // Base cuts
+    static TString GetBaseCuts()
+    {
+        return CombineCuts(
+            GetBEMCValidCut(),
+            GetVzDiffCut(9999.0),
+            GetRapidityCut(-1, 1),
+            GetNSigmaECut(nSigmaE_lo),
+            GetBEMCValidCut(),
+            GetETowEcluCut(EtowEclu),
+            GetEOverPCut(0.55, Eoverp_hi),
+            GetPtCut(d1_pT_lo),       // Assuming same pT cut for both electrons
+            GetADCCut(adc_trig_BHT2), // Using adc_trig for ONE electron (partner cut is off)
+            GetNHitsFitCut(nHitsFit),
+            GetNHitsRatioCut(nHitsRatio),
+            GetDCACut(3.0),
+            GetDZCut(20),
+            GetDphiCut(0.1));
     }
 };

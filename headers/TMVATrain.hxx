@@ -13,37 +13,37 @@ const double m_sig_lo = 8.8;
 const double m_sig_hi = 11.1;
 
 // S/B discrimination (on/off, only one can be active at once!)
-bool useMassCuts = 0;
-bool useChargeCuts = 1;
+bool useMassCuts = 1;
+bool useChargeCuts = 0;
 
 // TMVA Methods (on/off, at least one)
-bool kCuts = 1;
-bool kBDTG = 1;
-bool kHMatrix = 1;
-bool kFisher = 1;
-bool kMLP = 1;
-bool kSVM = 1;
+bool kTrainCuts = 1;
+bool kTrainBDTG = 1;
+bool kTrainHMatrix = 1;
+bool kTrainFisher = 1;
+bool kTrainMLP = 1;
+bool kTrainSVM = 1;
 
 vector<TString> TMVAInputVariables =
 {
-    //"dEdx1",
-    //"dEdx2",
-    //"eta1",
-    //"eta2",
-    //"phi1",
-    //"phi2",
+    "dEdx1",
+    "dEdx2",
+    "eta1",
+    "eta2",
+    "phi1",
+    "phi2",
     //"invBeta1",
     //"invBeta2",
-    //"E_TOW1",
-    //"E_CLU1",
-    //"E_TOW2",
-    //"E_CLU2",
-    //"min(E_TOW1/E_CLU1, E_TOW2/E_CLU2)",
-    //"max(E_CLU1/p1, E_CLU2/p2)",
-    //"min(E_CLU1/p1, E_CLU2/p2)",
+    "E_TOW1",
+    "E_CLU1",
+    "E_TOW2",
+    "E_CLU2",
+    "min(E_TOW1/E_CLU1, E_TOW2/E_CLU2)",
+    "max(E_CLU1/p1, E_CLU2/p2)",
+    "min(E_CLU1/p1, E_CLU2/p2)",
     "max(abs(bemcZDist1), abs(bemcZDist2))",
-    "max(abs(bemcPhiDist1), abs(bemcPhiDist2))"
-    //"max(abs(DCA1), abs(DCA2))"
+    "max(abs(bemcPhiDist1), abs(bemcPhiDist2))",
+    "max(abs(DCA1), abs(DCA2))"
 };
 
 /*
