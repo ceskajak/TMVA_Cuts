@@ -1,3 +1,11 @@
 .root
 src/*.h
-.zip
+*.zip
+
+S
+archive/
+data/
+dataset/
+output/
+output_smd_cut/
+python_reader/
