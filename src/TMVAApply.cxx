@@ -160,9 +160,11 @@ void TMVAApply(TString strVarset = "m2v")
     //TString TMVACuts = "MLPScore > 0.5"; // Example cut on MLP score for evaluation
 
     //FitResultMetrics metrics = EvaluateCandidate(outTree, TMVACuts, "response");
+    if (fout)
+        fout->Close();
 
-    fout->Close();
-    fin->Close();
+    if (fin)
+        fin->Close();
 
     return;
 }
