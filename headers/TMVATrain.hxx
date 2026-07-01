@@ -8,6 +8,14 @@ GLOBAL VARIABLES
 /////////////////////////////////////////////////////////////
 */
 
+// File and TTree
+TFile * fin;
+TTree * tree;
+
+// Signal and background selection for TMVA
+TString signalSelection;
+TString backgroundSelection;
+
 // Cuts for mass S/B discrimination
 const double m_sig_lo = 8.8;
 const double m_sig_hi = 11.1;

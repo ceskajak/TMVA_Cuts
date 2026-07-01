@@ -23,44 +23,11 @@ void TMVATrain()
     //gROOT->ProcessLine(".L UpsFitter.cxx+");
 
     // Open the input file and get the tree
-    TFile * fin = TFile::Open("data/main.root", "READ");
-    if (!fin || fin->IsZombie())
-    {
-        cerr << "ERROR: cannot open data/main.root" << endl;
-        return;
-    }
-
-    // Get the tree from the file
-    TTree * tree = dynamic_cast<TTree *>(fin->Get("tree"));
-    if (!tree)
-    {
-        cerr << "ERROR: cannot find tree in data/main.root" << endl;
-        fin->Close();
-        return;
-    }
+    tree = GetBaseTree();
 
     // Ensure output file is open before creating CopyTree trees so
     // copied TTrees are written to disk instead of being memory-resident.
     TFile *tmvaOutput = TFile::Open("output/tmva/TMVAOutput.root", "RECREATE");
-
-    // Base cuts: BEMC validation and Vz difference (no DZ/Dphi restrictions here)
-    cout << "Applying base cuts and creating datasets for fitting..." << endl;
-    cout << endl;
-
-    TString baseSelection = CutGenerator::GetBaseCuts();
-
-    // Combine base cuts with additional cuts to form the full selection for TMVA optimization
-    baseSelection = CutGenerator::CombineCuts(baseSelection, minCuts);
-
-    cout << "Base selection for TMVA optimization: " << baseSelection << endl;
-    cout << endl;
-
-    // Signal and background selection for TMVA
-    TString signalSelection;
-    TString backgroundSelection;
-
-    cout << "Preparing signal and background trees for TMVA..." << endl;
-    cout << endl;
 
     // Prevent undefined behaviour
     if (useMassCuts && useChargeCuts)
@@ -74,15 +41,15 @@ void TMVATrain()
     // mass-based
     else if (useMassCuts)
     {
-        signalSelection = baseSelection + Form(" && charge==0 && m > %f && m < %f", m_sig_lo, m_sig_hi);
-        backgroundSelection = baseSelection + Form(" && charge==0 && ((m > %f && m < %f) || (m > %f && m < %f))", min_mass, m_sig_lo, m_sig_hi, max_mass);
+        signalSelection = Form("charge==0 && m > %f && m < %f", m_sig_lo, m_sig_hi);
+        backgroundSelection = Form("charge==0 && ((m > %f && m < %f) || (m > %f && m < %f))", min_mass, m_sig_lo, m_sig_hi, max_mass);
     }
 
     // US/LS-based
     else if (useChargeCuts)
     {
-        signalSelection = baseSelection + " && charge==0";
-        backgroundSelection = baseSelection + " && charge!=0";
+        signalSelection = "charge==0";
+        backgroundSelection = "charge!=0";
     }
     else
     {
@@ -270,7 +237,7 @@ void TMVATrain()
         CutCandidate cand{variables, cutMin, cutMax, effS};
 
         TString tmvaCutExpr = BuildCutExpression(cand);
-        TString candidateCuts = CutGenerator::CombineCuts(baseSelection, tmvaCutExpr);
+        TString candidateCuts = tmvaCutExpr;
 
         cout << "Evaluating candidate with signal efficiency target: " << effS << endl;
         cout << "TMVA estimated background efficiency: " << effB << endl;
