@@ -1,15 +1,18 @@
 #include "../headers/TMVAApply.hxx"
 
-void TMVAApply(TString strDataset = "m2v")
+void TMVAApply(TString strVarset = "m2v")
 {
     // Set the dataset path for TMVA weights
-    weightPath += strDataset;
+    weightPath += strVarset;
+
+    // Set the paths to the TMVA weight files based on the variable set
+    SetWeightPaths();
 
     // Open input file
     fin = TFile::Open("data/main.root");
     tree = (TTree*)fin->Get("tree");
 
-    // All varable categories are subsets
+    // All variable categories are subsets
     AdjustVariableFlags();
 
     // Base cuts: BEMC validation and Vz difference (no DZ/Dphi restrictions here)
@@ -129,8 +132,10 @@ void TMVAApply(TString strDataset = "m2v")
 
     for (Long64_t i = 0; i < nEntries; ++i)
     {
+        // Load entry
         cutTree->GetEntry(i);
 
+        // Calculate derived variables
         var_min_ETOWoverECLU = min(var_E_TOW1 / var_E_CLU1, var_E_TOW2 / var_E_CLU2);
         var_max_ECLUoverP = max(var_E_CLU1 / var_p1, var_E_CLU2 / var_p2);
         var_min_ECLUoverP = min(var_E_CLU1 / var_p1, var_E_CLU2 / var_p2);
@@ -138,20 +143,26 @@ void TMVAApply(TString strDataset = "m2v")
         var_max_abs_bemcPhiDist = max(abs(var_bemcPhiDist1), abs(var_bemcPhiDist2));
         var_max_abs_DCA = max(abs(var_DCA1), abs(var_DCA2));
 
-        // Evaluate MLP
+        // Evaluate MLP methods
+        // Cuts
         if (kApplyCuts)
             for (uint j = 0; j <= 10; j++)
             {
                 TMVACutsScore.push_back(reader.EvaluateMVA("Cuts", (float)j/10.0));
             }
+        // BDTG
         if (kApplyBDTG)
             TMVABDTGScore = reader.EvaluateMVA("BDTG");
+        // HMatrix
         if (kApplyHMatrix)
             TMVAHMatrixScore = reader.EvaluateMVA("HMatrix");
+        // Fisher
         if (kApplyFisher)
             TMVAFisherScore = reader.EvaluateMVA("Fisher");
+        // MLP
         if (kApplyMLP)
             TMVAMLPScore = reader.EvaluateMVA("MLP");
+        // SVM
         if (kApplySVM)
             TMVASVMScore = reader.EvaluateMVA("SVM");
 

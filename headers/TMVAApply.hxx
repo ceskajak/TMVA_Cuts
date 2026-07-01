@@ -24,12 +24,12 @@ bool kApplyFisher = 1;
 bool kApplyMLP = 1;
 bool kApplySVM = 1;
 
-TString strCutsWeights = weightPath + "/TMVAOptimizeCuts_Cuts.weights.xml";
-TString strBDTGWeights = weightPath + "/TMVAOptimizeCuts_BDTG.weights.xml";
-TString strHMatrixWeights = weightPath + "/TMVAOptimizeCuts_HMatrix.weights.xml";
-TString strFisherWeights = weightPath + "/TMVAOptimizeCuts_Fisher.weights.xml";
-TString strMLPWeights = weightPath + "/TMVAOptimizeCuts_MLP.weights.xml";
-TString strSVMWeights = weightPath + "/TMVAOptimizeCuts_SVM.weights.xml";
+TString strCutsWeights;
+TString strBDTGWeights;
+TString strHMatrixWeights;
+TString strFisherWeights;
+TString strMLPWeights;
+TString strSVMWeights;
 
 // Input file and tree for TMVA application
 TFile * fin;
@@ -52,7 +52,7 @@ FUNCTIONS
 /////////////////////////////////////////////////////////////
 */
 
-void TMVAApply(TString strDataset); // Default dataset is "m16v" if not specified
+void TMVAApply(TString strVarset); // Default variable set is "m16v" if not specified
 
 inline void AdjustVariableFlags()
 {
@@ -86,6 +86,16 @@ inline void AdjustVariableFlags()
     }
 }
 
+inline void SetWeightPaths()
+{
+    strCutsWeights = weightPath + "/TMVAOptimizeCuts_Cuts.weights.xml";
+    strBDTGWeights = weightPath + "/TMVAOptimizeCuts_BDTG.weights.xml";
+    strHMatrixWeights = weightPath + "/TMVAOptimizeCuts_HMatrix.weights.xml";
+    strFisherWeights = weightPath + "/TMVAOptimizeCuts_Fisher.weights.xml";
+    strMLPWeights = weightPath + "/TMVAOptimizeCuts_MLP.weights.xml";
+    strSVMWeights = weightPath + "/TMVAOptimizeCuts_SVM.weights.xml";
+}
+
 // Load trained network
 inline void BookIfValid(const TString &methodName, const TString &weightFile, bool &kApplyMethod)
 {
@@ -99,4 +109,3 @@ inline void BookIfValid(const TString &methodName, const TString &weightFile, bo
         kApplyMethod = false; // Disable the method if the weight file is missing
     }
 };
-
