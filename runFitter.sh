@@ -7,9 +7,9 @@ root -l -b -q src/UpsFitter.cxx+
 echo "Executed!"
 echo "Cleanup..."
 
-rm src/*.pcm
-rm src/*.d
-rm src/*.so
-rm src/*UpsFitter*.h
+rm -f src/*.pcm
+rm -f src/*.d
+rm -f src/*.so
+rm -f src/*UpsFitter*.h
 
 echo "Finished!"

@@ -7,9 +7,9 @@ root -l -b -q "src/TMVAApply.cxx+(\"$1\")"
 echo "Executed!"
 echo "Cleanup..."
 
-rm src/*.pcm
-rm src/*.d
-rm src/*.so
-rm src/*TMVAApply*.h
+rm -f src/*.pcm
+rm -f src/*.d
+rm -f src/*.so
+rm -f src/*TMVAApply*.h
 
 echo "Finished!"

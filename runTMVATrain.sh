@@ -7,9 +7,9 @@ root -l -b -q src/TMVATrain.cxx+
 echo "Executed!"
 echo "Cleanup..."
 
-rm src/*.pcm
-rm src/*.d
-rm src/*.so
-rm src/*TMVATrain*.h
+rm -f src/*.pcm
+rm -f src/*.d
+rm -f src/*.so
+rm -f src/*TMVATrain*.h
 
 echo "Finished!"
