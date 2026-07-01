@@ -8,7 +8,7 @@ GLOBAL VARIABLES
 /////////////////////////////////////////////////////////////
 */
 // Path to TMVA weights
-TString weightPath = "dataset/weights/c5v";
+TString weightPath = "dataset/weights/";
 
 // Switches for variables
 bool k2v = 0;
@@ -52,7 +52,7 @@ FUNCTIONS
 /////////////////////////////////////////////////////////////
 */
 
-void TMVAApply();
+void TMVAApply(TString strDataset); // Default dataset is "m16v" if not specified
 
 inline void AdjustVariableFlags()
 {

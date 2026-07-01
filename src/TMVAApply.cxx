@@ -1,7 +1,10 @@
 #include "../headers/TMVAApply.hxx"
 
-void TMVAApply()
+void TMVAApply(TString strDataset = "m2v")
 {
+    // Set the dataset path for TMVA weights
+    weightPath += strDataset;
+
     // Open input file
     fin = TFile::Open("data/main.root");
     tree = (TTree*)fin->Get("tree");
