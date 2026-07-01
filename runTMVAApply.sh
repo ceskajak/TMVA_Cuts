@@ -1,8 +1,12 @@
 #!/bin/bash
 
 echo "Executing src/TMVAApply.cxx..."
-
-root -l -b -q "src/TMVAApply.cxx+(\"$1\")"
+if [ -z "$1" ]; then
+    echo "No varible set provided, using default..."
+    root -l -b -q "src/TMVAApply.cxx+()"
+else
+    root -l -b -q "src/TMVAApply.cxx+(\"$1\")"
+fi
 
 echo "Executed!"
 echo "Cleanup..."

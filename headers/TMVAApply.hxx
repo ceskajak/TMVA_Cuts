@@ -31,10 +31,6 @@ TString strFisherWeights;
 TString strMLPWeights;
 TString strSVMWeights;
 
-// Input file and tree for TMVA application
-TFile * fin;
-TTree * tree;
-
 // Create TMVA reader
 TMVA::Reader reader("!Color:!Silent");
 

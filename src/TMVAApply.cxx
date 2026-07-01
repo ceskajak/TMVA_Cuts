@@ -9,62 +9,47 @@ void TMVAApply(TString strVarset = "m2v")
     SetWeightPaths();
 
     // Open input file
-    fin = TFile::Open("data/main.root");
-    tree = (TTree*)fin->Get("tree");
+    tree = GetBaseTree();
 
     // All variable categories are subsets
     AdjustVariableFlags();
 
-    // Base cuts: BEMC validation and Vz difference (no DZ/Dphi restrictions here)
-    cout << "Applying base cuts (same used in training)..." << endl;
-    cout << endl;
-
-    TString baseSelection = CutGenerator::GetBaseCuts();
-
-    cout << "Base selection for TMVA evaluation: " << baseSelection << endl;
-    cout << endl;
-
-    TTree * cutTree = tree->CopyTree(baseSelection);
-    cout << "Cut tree created with selection: " << baseSelection << endl;
-    cout << "Cut tree entries: " << cutTree->GetEntries() << endl;
-    cout << endl;
-
     // Connect tree branches
-    cutTree->SetBranchAddress("m", &var_m);
-    cutTree->SetBranchAddress("charge", &var_charge);
-    cutTree->SetBranchAddress("y", &var_y);
-    cutTree->SetBranchAddress("nSigmaElectron1", &var_nSigmaElectron1);
-    cutTree->SetBranchAddress("nSigmaElectron2", &var_nSigmaElectron2);
-    cutTree->SetBranchAddress("dEdx1", &var_dEdx1);
-    cutTree->SetBranchAddress("dEdx2", &var_dEdx2);
-    cutTree->SetBranchAddress("eta1", &var_eta1);
-    cutTree->SetBranchAddress("eta2", &var_eta2);
-    cutTree->SetBranchAddress("phi1", &var_phi1);
-    cutTree->SetBranchAddress("phi2", &var_phi2);
-    cutTree->SetBranchAddress("invBeta1", &var_invBeta1);
-    cutTree->SetBranchAddress("invBeta2", &var_invBeta2);
-    cutTree->SetBranchAddress("E_TOW1", &var_E_TOW1);
-    cutTree->SetBranchAddress("E_CLU1", &var_E_CLU1);
-    cutTree->SetBranchAddress("E_TOW2", &var_E_TOW2);
-    cutTree->SetBranchAddress("E_CLU2", &var_E_CLU2);
-    cutTree->SetBranchAddress("p1", &var_p1);
-    cutTree->SetBranchAddress("p2", &var_p2);
-    cutTree->SetBranchAddress("pt1", &var_pt1);
-    cutTree->SetBranchAddress("pt2", &var_pt2);
-    cutTree->SetBranchAddress("adc1", &var_adc1);
-    cutTree->SetBranchAddress("adc2", &var_adc2);
-    cutTree->SetBranchAddress("bemcZDist1", &var_bemcZDist1);
-    cutTree->SetBranchAddress("bemcZDist2", &var_bemcZDist2);
-    cutTree->SetBranchAddress("bemcPhiDist1", &var_bemcPhiDist1);
-    cutTree->SetBranchAddress("bemcPhiDist2", &var_bemcPhiDist2);
-    cutTree->SetBranchAddress("VzTPC", &var_VzTPC);
-    cutTree->SetBranchAddress("VzVPD", &var_VzVPD);
-    cutTree->SetBranchAddress("nHitsFit1", &var_nHitsFit1);
-    cutTree->SetBranchAddress("nHitsMax1", &var_nHitsMax1);
-    cutTree->SetBranchAddress("nHitsFit2", &var_nHitsFit2);
-    cutTree->SetBranchAddress("nHitsMax2", &var_nHitsMax2);
-    cutTree->SetBranchAddress("DCA1", &var_DCA1);
-    cutTree->SetBranchAddress("DCA2", &var_DCA2);
+    tree->SetBranchAddress("m", &var_m);
+    tree->SetBranchAddress("charge", &var_charge);
+    tree->SetBranchAddress("y", &var_y);
+    tree->SetBranchAddress("nSigmaElectron1", &var_nSigmaElectron1);
+    tree->SetBranchAddress("nSigmaElectron2", &var_nSigmaElectron2);
+    tree->SetBranchAddress("dEdx1", &var_dEdx1);
+    tree->SetBranchAddress("dEdx2", &var_dEdx2);
+    tree->SetBranchAddress("eta1", &var_eta1);
+    tree->SetBranchAddress("eta2", &var_eta2);
+    tree->SetBranchAddress("phi1", &var_phi1);
+    tree->SetBranchAddress("phi2", &var_phi2);
+    tree->SetBranchAddress("invBeta1", &var_invBeta1);
+    tree->SetBranchAddress("invBeta2", &var_invBeta2);
+    tree->SetBranchAddress("E_TOW1", &var_E_TOW1);
+    tree->SetBranchAddress("E_CLU1", &var_E_CLU1);
+    tree->SetBranchAddress("E_TOW2", &var_E_TOW2);
+    tree->SetBranchAddress("E_CLU2", &var_E_CLU2);
+    tree->SetBranchAddress("p1", &var_p1);
+    tree->SetBranchAddress("p2", &var_p2);
+    tree->SetBranchAddress("pt1", &var_pt1);
+    tree->SetBranchAddress("pt2", &var_pt2);
+    tree->SetBranchAddress("adc1", &var_adc1);
+    tree->SetBranchAddress("adc2", &var_adc2);
+    tree->SetBranchAddress("bemcZDist1", &var_bemcZDist1);
+    tree->SetBranchAddress("bemcZDist2", &var_bemcZDist2);
+    tree->SetBranchAddress("bemcPhiDist1", &var_bemcPhiDist1);
+    tree->SetBranchAddress("bemcPhiDist2", &var_bemcPhiDist2);
+    tree->SetBranchAddress("VzTPC", &var_VzTPC);
+    tree->SetBranchAddress("VzVPD", &var_VzVPD);
+    tree->SetBranchAddress("nHitsFit1", &var_nHitsFit1);
+    tree->SetBranchAddress("nHitsMax1", &var_nHitsMax1);
+    tree->SetBranchAddress("nHitsFit2", &var_nHitsFit2);
+    tree->SetBranchAddress("nHitsMax2", &var_nHitsMax2);
+    tree->SetBranchAddress("DCA1", &var_DCA1);
+    tree->SetBranchAddress("DCA2", &var_DCA2);
 
     // Register variables in EXACTLY the same way as during training
     if (k16v)
@@ -111,7 +96,7 @@ void TMVAApply(TString strVarset = "m2v")
     TFile * fout = TFile::Open(weightPath + "/tree_TMVA-processed.root", "RECREATE");
 
     // Clone tree structure
-    TTree * outTree = cutTree->CloneTree(0);
+    TTree * outTree = tree->CloneTree(0);
 
     // New branch for MLP response
     if (kApplyCuts)
@@ -128,12 +113,12 @@ void TMVAApply(TString strVarset = "m2v")
         outTree->Branch("TMVASVMScore", &TMVASVMScore, "TMVASVMScore/F");
 
     // Loop over events
-    Long64_t nEntries = cutTree->GetEntries();
+    Long64_t nEntries = tree->GetEntries();
 
     for (Long64_t i = 0; i < nEntries; ++i)
     {
         // Load entry
-        cutTree->GetEntry(i);
+        tree->GetEntry(i);
 
         // Calculate derived variables
         var_min_ETOWoverECLU = min(var_E_TOW1 / var_E_CLU1, var_E_TOW2 / var_E_CLU2);
