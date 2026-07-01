@@ -65,23 +65,23 @@ inline void AdjustVariableFlags()
     }
     else if (weightPath.Contains("c5v") || weightPath.Contains("m5v"))
     {
-        k2v = 0;
+        k2v = 1;
         k5v = 1;
         k6v = 0;
         k16v = 0;
     }
     else if (weightPath.Contains("c6v") || weightPath.Contains("m6v"))
     {
-        k2v = 0;
-        k5v = 0;
+        k2v = 1;
+        k5v = 1;
         k6v = 1;
         k16v = 0;
     }
     else if (weightPath.Contains("c16v") || weightPath.Contains("m16v"))
     {
-        k2v = 0;
-        k5v = 0;
-        k6v = 0;
+        k2v = 1;
+        k5v = 1;
+        k6v = 1;
         k16v = 1;
     }
 }
