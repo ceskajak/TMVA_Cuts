@@ -1,8 +1,11 @@
 .root
-src/*.h
 *.zip
 
-S
+src/*.h
+src/*.pcm
+src/*.d
+src/*.so
+
 archive/
 data/
 dataset/
