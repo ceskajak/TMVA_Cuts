@@ -24,6 +24,7 @@ void UpsFitter()
 
 	// This calls the fitting function; use unique output names for plots/results
 	TString fitOutName = outname + "_fit";
+	
 	fit_bin(rds_US, rds_LS, fitOutName);
 
 	// Clean up

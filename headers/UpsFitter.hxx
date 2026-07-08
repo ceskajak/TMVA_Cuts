@@ -442,8 +442,7 @@ inline static RooDataSet * GetRooDataSet()
 		bemcZDist1, bemcZDist2, bemcPhiDist1, bemcPhiDist2, VzTPC, VzVPD,
 		nHitsFit1, nHitsMax1, nHitsFit2, nHitsMax2, DCA1, DCA2),
 		Import(*t_tmp));
-	rds_tmp = (RooDataSet *)rds_tmp->reduce(RooArgSet(m, charge, bemcZDist1, bemcZDist2, bemcPhiDist1, bemcPhiDist2));
-
+	rds_tmp = (RooDataSet *)rds_tmp->reduce(RooArgSet(m, charge));
 
     f_tmp->Close();
     return rds_tmp;

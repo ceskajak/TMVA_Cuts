@@ -1,20 +1,65 @@
 #include "../headers/TMVAApply.hxx"
 
-void TMVAApply(TString strVarset = "m2v")
+void UpdateReaderMethodFlags()
 {
-    // Set the dataset path for TMVA weights
-    weightPath += strVarset;
+    for (size_t iter = 0; iter < vec_TMVAMethods.size(); ++iter)
+    {
+        if (!CheckFileExists(Form("%s/TMVAOptimizeCuts_%s.weights.xml", weightPath.Data(), vec_TMVAMethods[iter].Data())))
+        {
+            if (vec_TMVAMethods[iter] == "Cuts")
+                kCuts = 0;
+            else if (vec_TMVAMethods[iter] == "BDTG")
+                kBDTG = 0;
+            else if (vec_TMVAMethods[iter] == "HMatrix")
+                kHMatrix = 0;
+            else if (vec_TMVAMethods[iter] == "Fisher")
+                kFisher = 0;
+            else if (vec_TMVAMethods[iter] == "MLP")
+                kMLP = 0;
+            else if (vec_TMVAMethods[iter] == "SVM")
+                kSVM = 0;
+        }
+    }
+}
 
-    // Set the paths to the TMVA weight files based on the variable set
-    SetWeightPaths();
+/////////////////////////////////////////////////////////////
 
-    // Open input file
-    tree = GetBaseTree();
+void AdjustVariableFlags()
+{
+    if (weightPath.Contains("c2v") || weightPath.Contains("m2v"))
+    {
+        k2v = 1;
+        k5v = 0;
+        k6v = 0;
+        k16v = 0;
+    }
+    else if (weightPath.Contains("c5v") || weightPath.Contains("m5v"))
+    {
+        k2v = 1;
+        k5v = 1;
+        k6v = 0;
+        k16v = 0;
+    }
+    else if (weightPath.Contains("c6v") || weightPath.Contains("m6v"))
+    {
+        k2v = 1;
+        k5v = 1;
+        k6v = 1;
+        k16v = 0;
+    }
+    else if (weightPath.Contains("c16v") || weightPath.Contains("m16v"))
+    {
+        k2v = 1;
+        k5v = 1;
+        k6v = 1;
+        k16v = 1;
+    }
+}
 
-    // All variable categories are subsets
-    AdjustVariableFlags();
+/////////////////////////////////////////////////////////////
 
-    // Connect tree branches
+void ConnectBranches(TTree *tree)
+{
     tree->SetBranchAddress("m", &var_m);
     tree->SetBranchAddress("charge", &var_charge);
     tree->SetBranchAddress("y", &var_y);
@@ -50,75 +95,161 @@ void TMVAApply(TString strVarset = "m2v")
     tree->SetBranchAddress("nHitsMax2", &var_nHitsMax2);
     tree->SetBranchAddress("DCA1", &var_DCA1);
     tree->SetBranchAddress("DCA2", &var_DCA2);
+}
 
-    // Register variables in EXACTLY the same way as during training
+/////////////////////////////////////////////////////////////
+
+void RegisterReaderVariables()
+{
     if (k16v)
     {
-        reader.AddVariable("dEdx1", &var_dEdx1);
-        reader.AddVariable("dEdx2", &var_dEdx2);
-        reader.AddVariable("eta1", &var_eta1);
-        reader.AddVariable("eta2", &var_eta2);
-        reader.AddVariable("phi1", &var_phi1);
-        reader.AddVariable("phi2", &var_phi2);
-        //reader.AddVariable("invBeta1", &var_invBeta1);
-        //reader.AddVariable("invBeta2", &var_invBeta2);
-        reader.AddVariable("E_TOW1", &var_E_TOW1);
-        reader.AddVariable("E_CLU1", &var_E_CLU1);
-        reader.AddVariable("E_TOW2", &var_E_TOW2);
-        reader.AddVariable("E_CLU2", &var_E_CLU2);
+        reader->AddVariable("dEdx1", &var_dEdx1);
+        reader->AddVariable("dEdx2", &var_dEdx2);
+        reader->AddVariable("eta1", &var_eta1);
+        reader->AddVariable("eta2", &var_eta2);
+        reader->AddVariable("phi1", &var_phi1);
+        reader->AddVariable("phi2", &var_phi2);
+        reader->AddVariable("E_TOW1", &var_E_TOW1);
+        reader->AddVariable("E_CLU1", &var_E_CLU1);
+        reader->AddVariable("E_TOW2", &var_E_TOW2);
+        reader->AddVariable("E_CLU2", &var_E_CLU2);
     }
     if (k5v)
     {
-        reader.AddVariable("min(E_TOW1/E_CLU1, E_TOW2/E_CLU2)", &var_min_ETOWoverECLU);
-        reader.AddVariable("max(E_CLU1/p1, E_CLU2/p2)", &var_max_ECLUoverP);
-        reader.AddVariable("min(E_CLU1/p1, E_CLU2/p2)", &var_min_ECLUoverP);
+        reader->AddVariable("min(E_TOW1/E_CLU1, E_TOW2/E_CLU2)", &var_min_ETOWoverECLU);
+        reader->AddVariable("max(E_CLU1/p1, E_CLU2/p2)", &var_max_ECLUoverP);
+        reader->AddVariable("min(E_CLU1/p1, E_CLU2/p2)", &var_min_ECLUoverP);
     }
     if (k2v)
     {
-        reader.AddVariable("max(abs(bemcZDist1), abs(bemcZDist2))", &var_max_abs_bemcZDist);
-        reader.AddVariable("max(abs(bemcPhiDist1), abs(bemcPhiDist2))", &var_max_abs_bemcPhiDist);
+        reader->AddVariable("max(abs(bemcZDist1), abs(bemcZDist2))", &var_max_abs_bemcZDist);
+        reader->AddVariable("max(abs(bemcPhiDist1), abs(bemcPhiDist2))", &var_max_abs_bemcPhiDist);
     }
     if (k6v)
     {
-        reader.AddVariable("max(abs(DCA1), abs(DCA2))", &var_max_abs_DCA);
+        reader->AddVariable("max(abs(DCA1), abs(DCA2))", &var_max_abs_DCA);
+    }
+}
+
+/////////////////////////////////////////////////////////////
+
+bool BookReader()
+{
+    reader = new TMVA::Reader("!Color:!Silent");
+    RegisterReaderVariables();
+    UpdateReaderMethodFlags();
+
+    cout << "Booking TMVA reader methods..." << endl;
+    if (!kCuts && !kBDTG && !kHMatrix && !kFisher && !kMLP && !kSVM)
+    {
+        cerr << "ERROR: No TMVA reader methods booked!" << endl;
+        cerr << "Quitting..." << endl;
+        cerr << "(Hint: Turn on a switch in `../headers/TMVAApply.hxx`.)" << endl;
+        if (t_sg)
+            delete t_sg;
+        if (t_bg)
+            delete t_bg;
+        f_in->Close();
+        return 0;
     }
 
-    
+    auto BookReaderMethod = [&](const TString &methodName)
+    {
+        reader->BookMVA(methodName, Form("%s/TMVAOptimizeCuts_%s.weights.xml", weightPath.Data(), methodName.Data()));
+    };
 
-    BookIfValid("Cuts", strCutsWeights, kApplyCuts);
-    BookIfValid("BDTG", strBDTGWeights, kApplyBDTG);
-    BookIfValid("HMatrix", strHMatrixWeights, kApplyHMatrix);
-    BookIfValid("Fisher", strFisherWeights, kApplyFisher);
-    BookIfValid("MLP", strMLPWeights, kApplyMLP);
-    BookIfValid("SVM", strSVMWeights, kApplySVM);
-    
+    if (kCuts)
+    {
+        BookReaderMethod("Cuts");
+        t_out->Branch("TMVACutsScore", &TMVACutsScore, "TMVACutsScore/F");
+    }
+    if (kBDTG)
+    {
+        BookReaderMethod("BDTG");
+        t_out->Branch("TMVABDTGScore", &TMVABDTGScore, "TMVABDTGScore/F");
+    }
+    if (kHMatrix)
+    {
+        BookReaderMethod("HMatrix");
+        t_out->Branch("TMVAHMatrixScore", &TMVAHMatrixScore, "TMVAHMatrixScore/F");
+    }
+    if (kFisher)
+    {
+        BookReaderMethod("Fisher");
+        t_out->Branch("TMVAFisherScore", &TMVAFisherScore, "TMVAFisherScore/F");
+    }
+    if (kMLP)
+    {
+        BookReaderMethod("MLP");
+        t_out->Branch("TMVAMLPScore", &TMVAMLPScore, "TMVAMLPScore/F");
+    }
+    if (kSVM)
+    {
+        BookReaderMethod("SVM");
+        t_out->Branch("TMVASVMScore", &TMVASVMScore, "TMVASVMScore/F");
+    }
+
+    return 1;
+}
+
+/////////////////////////////////////////////////////////////
+
+void TMVAApply(TString strVarset = "m2v")
+{
+    // Set the dataset path for TMVA weights
+    weightPath += strVarset;
+
+    // Open input file
+    t_main = GetBaseTree();
+
+    // All variable categories are subsets
+    AdjustVariableFlags();
+
+    // Connect tree branches
+    ConnectBranches(t_main);
+
     // Create output file
-    TFile * fout = TFile::Open(weightPath + "/tree_TMVA-processed.root", "RECREATE");
+    f_out = TFile::Open(weightPath + "/tree_TMVA-processed.root", "RECREATE");
+    if (!f_out || f_out->IsZombie())
+    {
+        cerr << "ERROR: Failed to create output file: " << weightPath << "/tree_TMVA-processed.root" << endl;
+        TMVACleaner();
+        return;
+    }
+
+    // Ensure the output file is the current directory before cloning/writing
+    f_out->cd();
 
     // Clone tree structure
-    TTree * outTree = tree->CloneTree(0);
+    t_out = t_main->CloneTree(0);
+    if (!t_out)
+    {
+        cerr << "ERROR: Failed to clone output tree." << endl;
+        TMVACleaner();
+        return;
+    }
 
-    // New branch for MLP response
-    if (kApplyCuts)
-        outTree->Branch("TMVACutsScore", &TMVACutsScore, "TMVACutsScore/F");
-    if (kApplyBDTG)
-        outTree->Branch("TMVABDTGScore", &TMVABDTGScore, "TMVABDTGScore/F");
-    if (kApplyHMatrix)
-        outTree->Branch("TMVAHMatrixScore", &TMVAHMatrixScore, "TMVAHMatrixScore/F");
-    if (kApplyFisher)
-        outTree->Branch("TMVAFisherScore", &TMVAFisherScore, "TMVAFisherScore/F");
-    if (kApplyMLP)
-        outTree->Branch("TMVAMLPScore", &TMVAMLPScore, "TMVAMLPScore/F");
-    if (kApplySVM)
-        outTree->Branch("TMVASVMScore", &TMVASVMScore, "TMVASVMScore/F");
+    // Explicitly associate the cloned tree with the output file
+    t_out->SetDirectory(f_out);
+
+    // Book TMVA reader methods
+    if (!BookReader())
+    {
+        cerr << "ERROR: Failed to get S/B criteria!" << endl;
+        cerr << "Quitting..." << endl;
+
+        TMVACleaner();
+
+        return;
+    }
 
     // Loop over events
-    Long64_t nEntries = tree->GetEntries();
+    Long64_t nEntries = t_main->GetEntries();
 
     for (Long64_t i = 0; i < nEntries; ++i)
     {
         // Load entry
-        tree->GetEntry(i);
+        t_main->GetEntry(i);
 
         // Calculate derived variables
         var_min_ETOWoverECLU = min(var_E_TOW1 / var_E_CLU1, var_E_TOW2 / var_E_CLU2);
@@ -130,41 +261,44 @@ void TMVAApply(TString strVarset = "m2v")
 
         // Evaluate MLP methods
         // Cuts
-        if (kApplyCuts)
+        if (kCuts)
             for (uint j = 0; j <= 10; j++)
-            {
-                TMVACutsScore.push_back(reader.EvaluateMVA("Cuts", (float)j/10.0));
-            }
+                TMVACutsScore.push_back(reader->EvaluateMVA("Cuts", (float)j / 10.0));
         // BDTG
-        if (kApplyBDTG)
-            TMVABDTGScore = reader.EvaluateMVA("BDTG");
+        if (kBDTG)
+            TMVABDTGScore = reader->EvaluateMVA("BDTG");
         // HMatrix
-        if (kApplyHMatrix)
-            TMVAHMatrixScore = reader.EvaluateMVA("HMatrix");
+        if (kHMatrix)
+            TMVAHMatrixScore = reader->EvaluateMVA("HMatrix");
         // Fisher
-        if (kApplyFisher)
-            TMVAFisherScore = reader.EvaluateMVA("Fisher");
+        if (kFisher)
+            TMVAFisherScore = reader->EvaluateMVA("Fisher");
         // MLP
-        if (kApplyMLP)
-            TMVAMLPScore = reader.EvaluateMVA("MLP");
+        if (kMLP)
+            TMVAMLPScore = reader->EvaluateMVA("MLP");
         // SVM
-        if (kApplySVM)
-            TMVASVMScore = reader.EvaluateMVA("SVM");
+        if (kSVM)
+            TMVASVMScore = reader->EvaluateMVA("SVM");
 
-        outTree->Fill();
+        t_out->Fill();
     }
 
     // Write output
-    outTree->Write();
+    if (!f_out || f_out->IsZombie())
+    {
+        cerr << "ERROR: Output file is not valid when attempting to write tree." << endl;
+    }
+    else
+    {
+        f_out->cd();
+        t_out->SetDirectory(f_out);
 
-    //TString TMVACuts = "MLPScore > 0.5"; // Example cut on MLP score for evaluation
+        t_out->Write();
+        f_out->Write();
+        f_out->Flush();
+    }
 
-    //FitResultMetrics metrics = EvaluateCandidate(outTree, TMVACuts, "response");
-    if (fout)
-        fout->Close();
-
-    if (fin)
-        fin->Close();
+    TMVACleaner();
 
     return;
 }
