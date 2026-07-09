@@ -8,7 +8,7 @@ FUNCTION DECLARATIONS
 /////////////////////////////////////////////////////////////
 */
 
-void TMVAApply(TString strVarset);
+bool TMVAApply(TString strVarset);
 void UpdateReaderMethodFlags();
 void AdjustVariableFlags();
 void ConnectBranches(TTree *t_main);

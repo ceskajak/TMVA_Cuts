@@ -52,7 +52,7 @@ const float Eoverp_hi = 1.45;   // upper bound for E_CLU/p (same for both electr
 const float d1_pT_lo = 1;	    // lower bound for electron1 pT
 const float d2_pT_lo = 1;	    // lower bound for electron2 pT
 
-int adc_trig;				// DSM-ADC for trigger electron (value set depending on dataset)
+extern int adc_trig;				// DSM-ADC for trigger electron (value set depending on dataset)
 const int adc_trig_BHT1 = 18;	// DSM-ADC for trigger electron (BHT1 dataset)
 const int adc_trig_BHT2 = 25;	// DSM-ADC for trigger electron (BHT2 dataset)
 const int adc_par = -1;	        // DSM-ADC for partner electron. off due to greater than

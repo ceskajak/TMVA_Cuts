@@ -90,47 +90,21 @@ public:
         return combined;
     }
 
-    // Variadic-like function to combine multiple cuts
-    static TString CombineCuts(const TString &cut1, const TString &cut2 = "", const TString &cut3 = "",
-                               const TString &cut4 = "", const TString &cut5 = "", const TString &cut6 = "",
-                               const TString &cut7 = "", const TString &cut8 = "", const TString &cut9 = "",
-                               const TString &cut10 = "", const TString &cut11 = "", const TString &cut12 = "",
-                               const TString &cut13 = "", const TString &cut14 = "", const TString &cut15 = "")
+    static TString CombineCuts(std::initializer_list<TString> cuts)
     {
-        TString combined = cut1;
-        if (cut2.Length() > 0)
-            combined = AppendCuts(combined, cut2);
-        if (cut3.Length() > 0)
-            combined = AppendCuts(combined, cut3);
-        if (cut4.Length() > 0)
-            combined = AppendCuts(combined, cut4);
-        if (cut5.Length() > 0)
-            combined = AppendCuts(combined, cut5);
-        if (cut6.Length() > 0)
-            combined = AppendCuts(combined, cut6);
-        if (cut7.Length() > 0)
-            combined = AppendCuts(combined, cut7);
-        if (cut8.Length() > 0)
-            combined = AppendCuts(combined, cut8);
-        if (cut9.Length() > 0)
-            combined = AppendCuts(combined, cut9);
-        if (cut10.Length() > 0)
-            combined = AppendCuts(combined, cut10);
-        if (cut11.Length() > 0)
-            combined = AppendCuts(combined, cut11);
-        if (cut12.Length() > 0)
-            combined = AppendCuts(combined, cut12);
-        if (cut13.Length() > 0)
-            combined = AppendCuts(combined, cut13);
-        if (cut14.Length() > 0)
-            combined = AppendCuts(combined, cut14);
+        TString combined;
+        for (const auto &cut : cuts)
+        {
+            if (cut.Length() > 0)
+                combined = AppendCuts(combined, cut);
+        }
         return combined;
     }
 
     // Combined cut - applies all cuts with default values
     static TString GetAllCuts()
     {
-        return CombineCuts(
+        return CombineCuts({
             GetRapidityCut(),
             GetNSigmaECut(),
             GetBEMCValidCut(),
@@ -143,13 +117,13 @@ public:
             GetNHitsFitCut(),
             GetNHitsRatioCut(),
             GetDCACut(),
-            GetVzDiffCut());
+                GetVzDiffCut()});
     }
 
     // Base cuts
     static TString GetBaseCuts()
     {
-        return CombineCuts(
+        return CombineCuts({
             GetBEMCValidCut(),
             GetVzDiffCut(9999.0),
             GetRapidityCut(-1, 1),
@@ -163,6 +137,6 @@ public:
             GetNHitsRatioCut(nHitsRatio),
             GetDCACut(3.0),
             GetDZCut(20),
-            GetDphiCut(0.1));
+                GetDphiCut(0.1)});
     }
 };

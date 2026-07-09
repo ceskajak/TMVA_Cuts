@@ -1,15 +1,13 @@
 #!/bin/bash
 
-echo "Executing src/UpsFitter.cxx..."
+set -euo pipefail
 
-root -l -b -q src/UpsFitter.cxx+
+echo "Building ups_fitter..."
+make bin/ups_fitter
+
+echo "Executing bin/ups_fitter..."
+./bin/ups_fitter
 
 echo "Executed!"
-echo "Cleanup..."
-
-rm -f src/*.pcm
-rm -f src/*.d
-rm -f src/*.so
-rm -f src/*UpsFitter*.h
 
 echo "Finished!"

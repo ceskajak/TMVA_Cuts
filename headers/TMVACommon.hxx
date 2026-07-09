@@ -11,92 +11,53 @@ SHARED TMVA STATE
 */
 
 // File and TTree
-static TFile * f_in = nullptr;
-static TFile * f_out = nullptr;
+extern TFile *f_in;
+extern TFile *f_out;
 
-static TTree * t_main = nullptr;
-static TTree * t_out = nullptr;
+extern TTree *t_main;
+extern TTree *t_out;
 
-static TTree * t_sg = nullptr;
-static TTree * t_bg = nullptr;
+extern TTree *t_sg;
+extern TTree *t_bg;
 
 // Signal and background selection for TMVA
-static TString str_sgCuts;
-static TString str_bgCuts;
+extern TString str_sgCuts;
+extern TString str_bgCuts;
 
 // Cuts for mass S/B discrimination
-static const double m_sig_lo = 8.8;
-static const double m_sig_hi = 11.1;
+extern const double m_sig_lo;
+extern const double m_sig_hi;
 
-// S/B discrimination (on/off, only one can be active at once!)
-static bool kMass = 1;
-static bool kCharge = 0;
+// S/B discrimination (on/off, only one can be active at once)
+extern bool kMass;
+extern bool kCharge;
 
-// TMVA Methods (on/off, at least one)
-static bool kCuts = 1;
-static bool kBDTG = 1;
-static bool kHMatrix = 1;
-static bool kFisher = 1;
-static bool kMLP = 1;
-static bool kSVM = 1;
+// TMVA methods
+extern std::vector<TString> vec_TMVAMethods;
+extern std::set<TString> activeMethodNames;
 
-static vector<TString> vec_TMVAMethods =
-{
-    "Cuts",
-    "BDTG",
-    "HMatrix",
-    "Fisher",
-    "MLP",
-    "SVM"
-};
-
-static TMVA::Factory * factory = nullptr;
-static TMVA::DataLoader * dataloader = nullptr;
-static TMVA::Reader * reader = nullptr;
+extern TMVA::Factory *factory;
+extern TMVA::DataLoader *dataloader;
+extern TMVA::Reader *reader;
 
 // Path to TMVA weights
-static TString weightPath = "dataset/weights/";
+extern TString weightPath;
 
-// Switches for variables
-static bool k2v = 0;
-static bool k5v = 0;
-static bool k6v = 0;
-static bool k16v = 0;
-
-static TString strCutsWeights;
-static TString strBDTGWeights;
-static TString strHMatrixWeights;
-static TString strFisherWeights;
-static TString strMLPWeights;
-static TString strSVMWeights;
+// Switches for variable sets
+extern bool k2v;
+extern bool k5v;
+extern bool k6v;
+extern bool k16v;
 
 // Variables for TMVA output values
-static vector<float> TMVACutsScore;
-static float TMVABDTGScore = 0.0f;
-static float TMVAHMatrixScore = 0.0f;
-static float TMVAFisherScore = 0.0f;
-static float TMVAMLPScore = 0.0f;
-static float TMVASVMScore = 0.0f;
+extern std::vector<float> TMVACutsScore;
+extern float TMVABDTGScore;
+extern float TMVAHMatrixScore;
+extern float TMVAFisherScore;
+extern float TMVAMLPScore;
+extern float TMVASVMScore;
 
-static vector<TString> vec_inputVariables =
-{
-    //"dEdx1",
-    //"dEdx2",
-    //"eta1",
-    //"eta2",
-    //"phi1",
-    //"phi2",
-    //"E_TOW1",
-    //"E_CLU1",
-    //"E_TOW2",
-    //"E_CLU2",
-    //"min(E_TOW1/E_CLU1, E_TOW2/E_CLU2)",
-    //"max(E_CLU1/p1, E_CLU2/p2)",
-    //"min(E_CLU1/p1, E_CLU2/p2)",
-    "max(abs(bemcZDist1), abs(bemcZDist2))",
-    "max(abs(bemcPhiDist1), abs(bemcPhiDist2))",
-    "max(abs(DCA1), abs(DCA2))"
-};
+extern std::vector<TString> vec_inputVariables;
 
 /*
 /////////////////////////////////////////////////////////////
@@ -104,69 +65,14 @@ SHARED TMVA DECLARATIONS
 /////////////////////////////////////////////////////////////
 */
 
-void TMVAApply(TString strVarset);
+bool TMVAApply(TString strVarset = "m2v");
 void UpdateReaderMethodFlags();
 void AdjustVariableFlags();
 void ConnectBranches(TTree *t_main);
 void RegisterReaderVariables();
 bool BookReader();
 
-void TMVATrain();
+bool TMVATrain();
 void TMVACleaner();
 bool GetSBCriteria();
 bool BookFactory();
-
-inline void TMVACleaner()
-{
-    if (reader)
-    {
-        delete reader;
-        reader = nullptr;
-    }
-
-    if (factory)
-    {
-        delete factory;
-        factory = nullptr;
-    }
-
-    if (dataloader)
-    {
-        delete dataloader;
-        dataloader = nullptr;
-    }
-
-    if (t_sg)
-    {
-        delete t_sg;
-        t_sg = nullptr;
-    }
-    if (t_bg)
-    {
-        delete t_bg;
-        t_bg = nullptr;
-    }
-    if (t_main)
-    {
-        delete t_main;
-        t_main = nullptr;
-    }
-    if (t_out)
-    {
-        delete t_out;
-        t_out = nullptr;
-    }
-
-    if (f_in)
-    {
-        f_in->Close();
-        delete f_in;
-        f_in = nullptr;
-    }
-    if (f_out)
-    {
-        f_out->Close();
-        delete f_out;
-        f_out = nullptr;
-    }
-}

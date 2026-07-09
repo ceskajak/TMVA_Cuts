@@ -23,9 +23,9 @@ struct FitResultMetrics {
 // Structure to hold cut variables, values and signal efficiency
 struct CutCandidate
 {
-    vector<TString> varNames;
-    vector<double> cutMin;
-    vector<double> cutMax;
+    std::vector<TString> varNames;
+    std::vector<double> cutMin;
+    std::vector<double> cutMax;
     double effS;
 };
 
@@ -34,87 +34,23 @@ struct CutCandidate
 FUNCTIONS
 /////////////////////////////////////////////////////////////
 */
-// Curent date (YYMMDD) for output purposes
-static TString init_date_string()
-{
-    time_t timestamp = time(NULL);
-    struct tm datetime = *localtime(&timestamp);
-
-    char output[6];
-    strftime(output, 8, "%y%m%d", & datetime);
-    return TString(output);
-}
+// Current date (YYMMDD) for output purposes
+TString init_date_string();
 
 /////////////////////////////////////////////////////////////
 
-inline TTree * GetBaseTree()
-{
-    if (!TFile::Open("data/cands+base.root"))
-    {
-        cout << "Preprocessed dataset not found. Creating..." << endl;
-
-        TFile * fTMPin = TFile::Open("data/main.root");
-        TTree * tTMP = (TTree *)fTMPin->Get("tree");
-
-        TFile * fTMPout = new TFile("data/cands+base.root", "RECREATE");
-        tTMP->CopyTree(CutGenerator::GetBaseCuts());
-
-        fTMPout->Write();
-        fTMPout->Close();
-        return tTMP;
-    }
-    else
-    {
-        cout << "Preprocessed dataset found. Loading..." << endl;
-        TFile * fTMPin = TFile::Open("data/cands+base.root");
-        TTree * tTMP = (TTree *)fTMPin->Get("tree");
-        return tTMP;
-    }
-}
+TTree *GetBaseTree();
 
 /////////////////////////////////////////////////////////////
 
 // Function to build a cut expression from a CutCandidate
-inline TString BuildCutExpression(const CutCandidate &cand)
-{
-    // Build a cut expression like "var1 > cutMin1 && var1 < cutMax1 && var2 > cutMin2 && var2 < cutMax2 ..."
-    TString expr;
-    for (size_t iv = 0; iv < cand.varNames.size(); ++iv)
-    {
-        TString var = cand.varNames[iv];
-        double lo = cand.cutMin[iv];
-        double hi = cand.cutMax[iv];
-        if (lo > -1e8)
-        {
-            TString term = Form("%s > %.8g", var.Data(), lo);
-            if (expr.Length())
-                expr += " && ";
-            expr += term;
-        }
-        if (hi < 1e8)
-        {
-            TString term = Form("%s < %.8g", var.Data(), hi);
-            if (expr.Length())
-                expr += " && ";
-            expr += term;
-        }
-    }
-    return expr;
-}
+TString BuildCutExpression(const CutCandidate &cand);
 
 /////////////////////////////////////////////////////////////
 
-static bool CheckFileExists(const TString &filename)
-{
-    TFile *file = TFile::Open(filename, "READ");
-    if (!file || file->IsZombie())
-    {
-        if (file)
-            file->Close();
-        return false; // File does not exist or is not readable
-    }
-    file->Close();
-    return true; // File exists and is readable
-}
+bool CheckFileExists(const TString &filename);
+
+// Suppress known non-actionable ROOT warning noise while preserving all other diagnostics.
+void InstallRootWarningFilter();
 
 /////////////////////////////////////////////////////////////

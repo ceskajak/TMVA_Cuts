@@ -8,6 +8,6 @@ FUNCTION DECLARATIONS
 /////////////////////////////////////////////////////////////
 */
 
-void TMVATrain();
+bool TMVATrain();
 bool GetSBCriteria();
 bool BookFactory();

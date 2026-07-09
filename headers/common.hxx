@@ -5,6 +5,13 @@
 #include <fstream>
 #include <vector>
 #include <map>
+#include <set>
+#include <array>
+#include <memory>
+#include <algorithm>
+#include <initializer_list>
+#include <cmath>
+#include <ctime>
 
 #include "TSystem.h"
 #include "TString.h"
@@ -43,7 +50,3 @@
 #ifndef __CINT__
 #include "RooGlobalFunc.h"
 #endif  // __CINT__
-
-// Namespaces
-using namespace std;
-using namespace RooFit;

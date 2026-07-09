@@ -1,58 +1,72 @@
 #include "../headers/TMVAApply.hxx"
 
+using namespace std;
+
+namespace
+{
+bool IsMethodEnabled(const TString &method)
+{
+    return activeMethodNames.find(method) != activeMethodNames.end();
+}
+
+void EnableBranch(TTree *tree, const char *branchName)
+{
+    tree->SetBranchStatus(branchName, 1);
+}
+} // namespace
+
 void UpdateReaderMethodFlags()
 {
-    for (size_t iter = 0; iter < vec_TMVAMethods.size(); ++iter)
+    std::set<TString> available;
+    for (const auto &method : vec_TMVAMethods)
     {
-        if (!CheckFileExists(Form("%s/TMVAOptimizeCuts_%s.weights.xml", weightPath.Data(), vec_TMVAMethods[iter].Data())))
+        const TString weightFile = Form("%s/TMVAOptimizeCuts_%s.weights.xml", weightPath.Data(), method.Data());
+        if (CheckFileExists(weightFile))
         {
-            if (vec_TMVAMethods[iter] == "Cuts")
-                kCuts = 0;
-            else if (vec_TMVAMethods[iter] == "BDTG")
-                kBDTG = 0;
-            else if (vec_TMVAMethods[iter] == "HMatrix")
-                kHMatrix = 0;
-            else if (vec_TMVAMethods[iter] == "Fisher")
-                kFisher = 0;
-            else if (vec_TMVAMethods[iter] == "MLP")
-                kMLP = 0;
-            else if (vec_TMVAMethods[iter] == "SVM")
-                kSVM = 0;
+            available.insert(method);
         }
     }
+    activeMethodNames = available;
 }
 
 /////////////////////////////////////////////////////////////
 
 void AdjustVariableFlags()
 {
-    if (weightPath.Contains("c2v") || weightPath.Contains("m2v"))
+    struct VarsetState
     {
-        k2v = 1;
-        k5v = 0;
-        k6v = 0;
-        k16v = 0;
-    }
-    else if (weightPath.Contains("c5v") || weightPath.Contains("m5v"))
+        bool use2v;
+        bool use5v;
+        bool use6v;
+        bool use16v;
+    };
+
+    static const std::vector<std::pair<TString, VarsetState>> lookup = {
+        {"c16v", {true, true, true, true}},
+        {"m16v", {true, true, true, true}},
+        {"c6v", {true, true, true, false}},
+        {"m6v", {true, true, true, false}},
+        {"c5v", {true, true, false, false}},
+        {"m5v", {true, true, false, false}},
+        {"c2v", {true, false, false, false}},
+        {"m2v", {true, false, false, false}},
+    };
+
+    k2v = false;
+    k5v = false;
+    k6v = false;
+    k16v = false;
+
+    for (const auto &entry : lookup)
     {
-        k2v = 1;
-        k5v = 1;
-        k6v = 0;
-        k16v = 0;
-    }
-    else if (weightPath.Contains("c6v") || weightPath.Contains("m6v"))
-    {
-        k2v = 1;
-        k5v = 1;
-        k6v = 1;
-        k16v = 0;
-    }
-    else if (weightPath.Contains("c16v") || weightPath.Contains("m16v"))
-    {
-        k2v = 1;
-        k5v = 1;
-        k6v = 1;
-        k16v = 1;
+        if (weightPath.Contains(entry.first))
+        {
+            k2v = entry.second.use2v;
+            k5v = entry.second.use5v;
+            k6v = entry.second.use6v;
+            k16v = entry.second.use16v;
+            return;
+        }
     }
 }
 
@@ -135,21 +149,18 @@ void RegisterReaderVariables()
 
 bool BookReader()
 {
-    reader = new TMVA::Reader("!Color:!Silent");
+    reader = new TMVA::Reader("!Color:Silent");
     RegisterReaderVariables();
     UpdateReaderMethodFlags();
 
     cout << "Booking TMVA reader methods..." << endl;
-    if (!kCuts && !kBDTG && !kHMatrix && !kFisher && !kMLP && !kSVM)
+    if (activeMethodNames.empty())
     {
         cerr << "ERROR: No TMVA reader methods booked!" << endl;
         cerr << "Quitting..." << endl;
         cerr << "(Hint: Turn on a switch in `../headers/TMVAApply.hxx`.)" << endl;
-        if (t_sg)
-            delete t_sg;
-        if (t_bg)
-            delete t_bg;
-        f_in->Close();
+        delete reader;
+        reader = nullptr;
         return 0;
     }
 
@@ -158,32 +169,32 @@ bool BookReader()
         reader->BookMVA(methodName, Form("%s/TMVAOptimizeCuts_%s.weights.xml", weightPath.Data(), methodName.Data()));
     };
 
-    if (kCuts)
+    if (IsMethodEnabled("Cuts"))
     {
         BookReaderMethod("Cuts");
-        t_out->Branch("TMVACutsScore", &TMVACutsScore, "TMVACutsScore/F");
+        t_out->Branch("TMVACutsScore", &TMVACutsScore);
     }
-    if (kBDTG)
+    if (IsMethodEnabled("BDTG"))
     {
         BookReaderMethod("BDTG");
         t_out->Branch("TMVABDTGScore", &TMVABDTGScore, "TMVABDTGScore/F");
     }
-    if (kHMatrix)
+    if (IsMethodEnabled("HMatrix"))
     {
         BookReaderMethod("HMatrix");
         t_out->Branch("TMVAHMatrixScore", &TMVAHMatrixScore, "TMVAHMatrixScore/F");
     }
-    if (kFisher)
+    if (IsMethodEnabled("Fisher"))
     {
         BookReaderMethod("Fisher");
         t_out->Branch("TMVAFisherScore", &TMVAFisherScore, "TMVAFisherScore/F");
     }
-    if (kMLP)
+    if (IsMethodEnabled("MLP"))
     {
         BookReaderMethod("MLP");
         t_out->Branch("TMVAMLPScore", &TMVAMLPScore, "TMVAMLPScore/F");
     }
-    if (kSVM)
+    if (IsMethodEnabled("SVM"))
     {
         BookReaderMethod("SVM");
         t_out->Branch("TMVASVMScore", &TMVASVMScore, "TMVASVMScore/F");
@@ -194,27 +205,73 @@ bool BookReader()
 
 /////////////////////////////////////////////////////////////
 
-void TMVAApply(TString strVarset = "m2v")
+bool TMVAApply(TString strVarset)
 {
-    // Set the dataset path for TMVA weights
-    weightPath += strVarset;
+    using std::abs;
+    using std::max;
+    using std::min;
+
+    const TString baseWeightPath = "dataset/weights";
+    const TString requestedWeightPath = Form("%s/%s", baseWeightPath.Data(), strVarset.Data());
+    bool useFallbackWeights = false;
+
+    // Reset global path each run (do not accumulate suffixes between calls).
+    weightPath = requestedWeightPath;
+
+    if (gSystem->AccessPathName(requestedWeightPath))
+        gSystem->mkdir(requestedWeightPath, true);
+
+    bool hasRequestedWeights = false;
+    for (const auto &method : vec_TMVAMethods)
+    {
+        const TString weightFile = Form("%s/TMVAOptimizeCuts_%s.weights.xml", requestedWeightPath.Data(), method.Data());
+        if (CheckFileExists(weightFile))
+        {
+            hasRequestedWeights = true;
+            break;
+        }
+    }
+    if (!hasRequestedWeights)
+    {
+        weightPath = baseWeightPath;
+        useFallbackWeights = true;
+        cout << "No varset-specific weights found in " << requestedWeightPath
+             << ", falling back to " << baseWeightPath << endl;
+    }
 
     // Open input file
     t_main = GetBaseTree();
+    if (!t_main)
+    {
+        cerr << "ERROR: Failed to get base tree." << endl;
+        return false;
+    }
 
-    // All variable categories are subsets
-    AdjustVariableFlags();
+    // All variable categories are subsets.
+    // Base fallback weights are currently trained with 3 variables (2v + DCA),
+    // so force a compatible reader configuration.
+    if (useFallbackWeights)
+    {
+        k2v = true;
+        k5v = false;
+        k6v = true;
+        k16v = false;
+    }
+    else
+    {
+        AdjustVariableFlags();
+    }
 
     // Connect tree branches
     ConnectBranches(t_main);
 
     // Create output file
-    f_out = TFile::Open(weightPath + "/tree_TMVA-processed.root", "RECREATE");
+    f_out = TFile::Open(requestedWeightPath + "/tree_TMVA-processed.root", "RECREATE");
     if (!f_out || f_out->IsZombie())
     {
-        cerr << "ERROR: Failed to create output file: " << weightPath << "/tree_TMVA-processed.root" << endl;
+        cerr << "ERROR: Failed to create output file: " << requestedWeightPath << "/tree_TMVA-processed.root" << endl;
         TMVACleaner();
-        return;
+        return false;
     }
 
     // Ensure the output file is the current directory before cloning/writing
@@ -226,11 +283,57 @@ void TMVAApply(TString strVarset = "m2v")
     {
         cerr << "ERROR: Failed to clone output tree." << endl;
         TMVACleaner();
-        return;
+        return false;
     }
 
     // Explicitly associate the cloned tree with the output file
     t_out->SetDirectory(f_out);
+
+    // Read only branches required by the active varset.
+    t_main->SetBranchStatus("*", 0);
+    EnableBranch(t_main, "m");
+    EnableBranch(t_main, "charge");
+
+    if (k16v)
+    {
+        EnableBranch(t_main, "dEdx1");
+        EnableBranch(t_main, "dEdx2");
+        EnableBranch(t_main, "eta1");
+        EnableBranch(t_main, "eta2");
+        EnableBranch(t_main, "phi1");
+        EnableBranch(t_main, "phi2");
+        EnableBranch(t_main, "E_TOW1");
+        EnableBranch(t_main, "E_CLU1");
+        EnableBranch(t_main, "E_TOW2");
+        EnableBranch(t_main, "E_CLU2");
+    }
+
+    if (k5v)
+    {
+        EnableBranch(t_main, "E_TOW1");
+        EnableBranch(t_main, "E_CLU1");
+        EnableBranch(t_main, "E_TOW2");
+        EnableBranch(t_main, "E_CLU2");
+        EnableBranch(t_main, "p1");
+        EnableBranch(t_main, "p2");
+    }
+
+    if (k2v)
+    {
+        EnableBranch(t_main, "bemcZDist1");
+        EnableBranch(t_main, "bemcZDist2");
+        EnableBranch(t_main, "bemcPhiDist1");
+        EnableBranch(t_main, "bemcPhiDist2");
+    }
+
+    if (k6v)
+    {
+        EnableBranch(t_main, "DCA1");
+        EnableBranch(t_main, "DCA2");
+    }
+
+    t_main->SetCacheSize(10000000);
+    t_main->AddBranchToCache("*", kTRUE);
 
     // Book TMVA reader methods
     if (!BookReader())
@@ -240,14 +343,17 @@ void TMVAApply(TString strVarset = "m2v")
 
         TMVACleaner();
 
-        return;
+        return false;
     }
 
     // Loop over events
     Long64_t nEntries = t_main->GetEntries();
+    TMVACutsScore.reserve(11);
 
     for (Long64_t i = 0; i < nEntries; ++i)
     {
+        TMVACutsScore.clear();
+
         // Load entry
         t_main->GetEntry(i);
 
@@ -261,23 +367,23 @@ void TMVAApply(TString strVarset = "m2v")
 
         // Evaluate MLP methods
         // Cuts
-        if (kCuts)
+        if (IsMethodEnabled("Cuts"))
             for (uint j = 0; j <= 10; j++)
                 TMVACutsScore.push_back(reader->EvaluateMVA("Cuts", (float)j / 10.0));
         // BDTG
-        if (kBDTG)
+        if (IsMethodEnabled("BDTG"))
             TMVABDTGScore = reader->EvaluateMVA("BDTG");
         // HMatrix
-        if (kHMatrix)
+        if (IsMethodEnabled("HMatrix"))
             TMVAHMatrixScore = reader->EvaluateMVA("HMatrix");
         // Fisher
-        if (kFisher)
+        if (IsMethodEnabled("Fisher"))
             TMVAFisherScore = reader->EvaluateMVA("Fisher");
         // MLP
-        if (kMLP)
+        if (IsMethodEnabled("MLP"))
             TMVAMLPScore = reader->EvaluateMVA("MLP");
         // SVM
-        if (kSVM)
+        if (IsMethodEnabled("SVM"))
             TMVASVMScore = reader->EvaluateMVA("SVM");
 
         t_out->Fill();
@@ -300,5 +406,5 @@ void TMVAApply(TString strVarset = "m2v")
 
     TMVACleaner();
 
-    return;
+    return true;
 }

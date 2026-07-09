@@ -1,13 +1,30 @@
 #include "../headers/TMVATrain.hxx"
 
+using namespace std;
+
+namespace
+{
+bool IsMethodEnabled(const TString &method)
+{
+    return activeMethodNames.find(method) != activeMethodNames.end();
+}
+} // namespace
+
 bool GetSBCriteria()
 {
+    if (!t_main)
+    {
+        cerr << "ERROR: Input tree is null. Cannot build S/B criteria." << endl;
+        return 0;
+    }
+
     if (kMass && kCharge)
     {
         cerr << "ERROR: Multiple S/B criteria selected, undefined behaviour!" << endl;
         cerr << "Quitting..." << endl;
         cerr << "(Hint: Only one switch in `../headers/TMVATrain.hxx` can be active at once.)" << endl;
-        f_in->Close();
+        if (f_in)
+            f_in->Close();
         return 0;
     }
     else if (kMass)
@@ -25,7 +42,8 @@ bool GetSBCriteria()
         cerr << "ERROR: No S/B criteria selected, undefined behaviour!" << endl;
         cerr << "Quitting..." << endl;
         cerr << "(Hint: Turn on a switch in `../headers/TMVATrain.hxx`.)" << endl;
-        f_in->Close();
+        if (f_in)
+            f_in->Close();
         return 0;
     }
 
@@ -39,19 +57,29 @@ bool GetSBCriteria()
     cout << "Background tree entries: " << t_bg->GetEntries() << endl;
     cout << endl;
 
-    if (!t_sg || !t_bg)
+    if (!t_sg || !t_bg || t_sg->GetEntries() == 0 || t_bg->GetEntries() == 0)
     {
-        cerr << "ERROR: Failed to create TMVA S/B trees" << endl;
+        cerr << "ERROR: Failed to create non-empty TMVA S/B trees" << endl;
         if (t_sg)
             delete t_sg;
         if (t_bg)
             delete t_bg;
 
-        f_in->Close();
-        f_out->Close();
+        t_sg = nullptr;
+        t_bg = nullptr;
 
-        delete f_in;
-        delete f_out;
+        if (f_in)
+        {
+            f_in->Close();
+            delete f_in;
+            f_in = nullptr;
+        }
+        if (f_out)
+        {
+            f_out->Close();
+            delete f_out;
+            f_out = nullptr;
+        }
 
         return 0;
     }
@@ -65,7 +93,7 @@ bool GetSBCriteria()
 bool BookFactory()
 {
     cout << "Booking TMVA methods..." << endl;
-    if (!kCuts && !kBDTG && !kHMatrix && !kFisher && !kMLP && !kSVM)
+    if (activeMethodNames.empty())
     {
         cerr << "ERROR: No TMVA methods booked!" << endl;
         cerr << "Quitting..." << endl;
@@ -74,11 +102,12 @@ bool BookFactory()
             delete t_sg;
         if (t_bg)
             delete t_bg;
-        f_in->Close();
+        if (f_in)
+            f_in->Close();
         return 0;
     }
 
-    if (kCuts)
+    if (IsMethodEnabled("Cuts"))
         factory->BookMethod(dataloader,
             TMVA::Types::kCuts,
             "Cuts",
@@ -89,7 +118,7 @@ bool BookFactory()
             "VarProp=FSmart"
         );
 
-    if (kBDTG)
+    if (IsMethodEnabled("BDTG"))
         factory->BookMethod(dataloader,
             TMVA::Types::kBDT,
             "BDTG",
@@ -102,14 +131,14 @@ bool BookFactory()
             "BaggedSampleFraction=0.5"
         );
 
-    if (kHMatrix)
+    if (IsMethodEnabled("HMatrix"))
         factory->BookMethod(dataloader,
             TMVA::Types::kHMatrix,
             "HMatrix",
             "!H:!V"
         );
 
-    if (kFisher)
+    if (IsMethodEnabled("Fisher"))
         factory->BookMethod(dataloader,
             TMVA::Types::kFisher,
             "Fisher",
@@ -122,7 +151,7 @@ bool BookFactory()
             "NsmoothMVAPdf=10"
         );
 
-    if (kMLP)
+    if (IsMethodEnabled("MLP"))
         factory->BookMethod(dataloader,
             TMVA::Types::kMLP,
             "MLP",
@@ -135,7 +164,7 @@ bool BookFactory()
             "TestRate=5"
         );
 
-    if (kSVM)
+    if (IsMethodEnabled("SVM"))
         factory->BookMethod(dataloader,
             TMVA::Types::kSVM,
             "SVM",
@@ -152,22 +181,30 @@ bool BookFactory()
 /////////////////////////////////////////////////////////////
 
 // Main function to perform TMVA optimization of cuts
-void TMVATrain()
+bool TMVATrain()
 {
     cout << "Starting TMVA cut optimization..." << endl;
     cout << endl;
 
     // Ensure output directory exists
-    if (!gSystem->AccessPathName("output"))
+    if (gSystem->AccessPathName("output/tmva"))
     {
         gSystem->mkdir("output/tmva", true);
     }
+
+    activeMethodNames = std::set<TString>(vec_TMVAMethods.begin(), vec_TMVAMethods.end());
 
     // Initialize TMVA tools (needed for standalone execution)
     TMVA::Tools::Instance();
 
     // Open the input file and get the tree
     t_main = GetBaseTree();
+    if (!t_main)
+    {
+        cerr << "ERROR: Failed to get input tree." << endl;
+        TMVACleaner();
+        return false;
+    }
 
     // Ensure output file is open before creating CopyTree trees so
     // copied TTrees are written to disk instead of being memory-resident.
@@ -181,7 +218,7 @@ void TMVATrain()
 
         TMVACleaner();
 
-        return;
+        return false;
     }
     
     // Prepare TMVA DataLoader with the selected variables and trees
@@ -209,7 +246,7 @@ void TMVATrain()
     factory = new TMVA::Factory("TMVAOptimizeCuts",
                                 f_out,
                                 "!V:"
-                                "!Silent:"
+                                "Silent:"
                                 "Color:"
                                 "DrawProgressBar"
                                 );
@@ -222,7 +259,7 @@ void TMVATrain()
 
         TMVACleaner();
 
-        return;
+        return false;
     }
 
     cout << "TMVA Factory and DataLoader set up successfully!" << endl;
@@ -237,25 +274,7 @@ void TMVATrain()
     cout << "TMVA training/testing/evaluation complete!" << endl;
     cout << endl;
 
-    /*
-    cout << "Exitting..." << endl;
-    return;
-    */
-
-    /*
-    // Extract the optimized cuts from the Cuts method and evaluate the resulting cut candidate on the original dataset to get final metrics
-    TMVA::IMethod * im = factory->GetMethod("dataset", "Cuts");
-    TMVA::MethodCuts *cutMethod = TMVA::MethodCuts::DynamicCast(im);
-    if (!cutMethod)
-    {
-        cerr << "ERROR: TMVA Cuts method not available" << endl;
-        
-        ~TMVATrain();
-
-        return;
-    }
-    */
-
     // Clean-up
     TMVACleaner();
+    return true;
 }
