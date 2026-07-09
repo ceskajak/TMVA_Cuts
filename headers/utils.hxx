@@ -50,6 +50,9 @@ TString BuildCutExpression(const CutCandidate &cand);
 
 bool CheckFileExists(const TString &filename);
 
+// Ensure relative paths are resolved from repository root even when executable is launched from bin/.
+bool SetProjectRootAsCwd();
+
 // Suppress known non-actionable ROOT warning noise while preserving all other diagnostics.
 void InstallRootWarningFilter();
 

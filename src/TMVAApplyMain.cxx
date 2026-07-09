@@ -2,6 +2,7 @@
 
 int main(int argc, char **argv)
 {
+    SetProjectRootAsCwd();
     InstallRootWarningFilter();
 
     TString varset = "m2v";

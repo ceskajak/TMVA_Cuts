@@ -158,6 +158,26 @@ bool CheckFileExists(const TString &filename)
     return gSystem->AccessPathName(filename) == 0;
 }
 
+bool SetProjectRootAsCwd()
+{
+    namespace fs = std::filesystem;
+
+    std::error_code ec;
+    const fs::path exePath = fs::read_symlink("/proc/self/exe", ec);
+    if (ec || exePath.empty())
+        return false;
+
+    fs::path rootPath = exePath.parent_path();
+    if (rootPath.filename() == "bin")
+        rootPath = rootPath.parent_path();
+
+    if (!fs::exists(rootPath / "headers") || !fs::exists(rootPath / "src"))
+        return false;
+
+    fs::current_path(rootPath, ec);
+    return !ec;
+}
+
 void InstallRootWarningFilter()
 {
     if (!gPreviousErrorHandler)

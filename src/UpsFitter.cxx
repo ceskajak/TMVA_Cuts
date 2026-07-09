@@ -42,6 +42,7 @@ std::vector<std::vector<Double_t>> frac = {
 
 int main()
 {
+    SetProjectRootAsCwd();
     InstallRootWarningFilter();
     return UpsFitter() ? 0 : 1;
 }

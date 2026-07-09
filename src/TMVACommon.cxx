@@ -49,7 +49,8 @@ float TMVASVMScore = 0.0f;
 std::vector<TString> vec_inputVariables = {
     "max(abs(bemcZDist1), abs(bemcZDist2))",
     "max(abs(bemcPhiDist1), abs(bemcPhiDist2))",
-    "max(abs(DCA1), abs(DCA2))"};
+    "max(abs(DCA1), abs(DCA2))"
+};
 
 void TMVACleaner()
 {
