@@ -13,6 +13,12 @@ INPUT FILES
 extern TString infile_BHT1;
 extern TString infile_BHT2;
 
+// Optional override: when non-empty, GetRooDataSet() reads this file/tree
+// (e.g. a TMVAApply "tree_TMVA-processed.root") and applies fitCutExpr instead
+// of the default "data/cands+base.root" input.
+extern TString fitInputFile;
+extern TString fitCutExpr;
+
 /*
 /////////////////////////////////////////////////////////////
 NAME HANDLERS
@@ -55,4 +61,4 @@ FUNCTIONS
 
 bool UpsFitter();
 FitResultMetrics fit_bin(RooDataSet *ds_US, RooDataSet *ds_LS, TString outname, Bool_t saveResults = true);
-RooDataSet *GetRooDataSet();
+RooDataSet *GetRooDataSet(const TString &infile = "", const TString &cutExpr = "");

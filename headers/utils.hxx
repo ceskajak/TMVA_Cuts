@@ -18,6 +18,13 @@ struct FitResultMetrics {
     Double_t LS_entries;
     Double_t chi2ndf_US;
     Double_t chi2ndf_LS;
+
+    // Alternative background model (2nd-degree polynomial instead of exponential),
+    // fit and drawn alongside the exponential-background result above.
+    Double_t yield_poly;
+    Double_t yieldErr_poly;
+    Double_t chi2ndf_US_poly;
+    Double_t chi2ndf_LS_poly;
 };
 
 // Structure to hold cut variables, values and signal efficiency

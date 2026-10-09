@@ -31,6 +31,7 @@
 #include "RooAddPdf.h"
 #include "RooGaussian.h"
 #include "RooExponential.h"
+#include "RooPolynomial.h"
 #include "RooHist.h"
 #include "RooArgSet.h"
 #include "RooFitResult.h"

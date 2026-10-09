@@ -346,6 +346,13 @@ bool TMVAApply(TString strVarset)
         return false;
     }
 
+    // TMVA::Reader/BookMVA is known to cd() into its own internal bookkeeping
+    // directories without restoring gDirectory, which can leave t_out without
+    // a live file association by the time we start filling it. Re-pin both
+    // explicitly before the fill loop.
+    f_out->cd();
+    t_out->SetDirectory(f_out);
+
     // Loop over events
     Long64_t nEntries = t_main->GetEntries();
     TMVACutsScore.reserve(11);
@@ -386,7 +393,21 @@ bool TMVAApply(TString strVarset)
         if (IsMethodEnabled("SVM"))
             TMVASVMScore = reader->EvaluateMVA("SVM");
 
-        t_out->Fill();
+        if (t_out->Fill() < 0)
+        {
+            cerr << "ERROR: TTree::Fill failed at entry " << i << " of " << nEntries
+                 << " (basket write failure - output file/disk may be unwritable)." << endl;
+            cerr << "Aborting rather than continuing to write a silently truncated/corrupted tree." << endl;
+            TMVACleaner();
+            return false;
+        }
+    }
+
+    if (f_out && f_out->TestBit(TFile::kWriteError))
+    {
+        cerr << "ERROR: Output file " << f_out->GetName() << " recorded a write error during the run." << endl;
+        TMVACleaner();
+        return false;
     }
 
     // Write output
