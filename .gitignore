@@ -12,3 +12,5 @@ dataset/
 output/
 output_smd_cut/
 python_reader/
+bin/
+presentation/
